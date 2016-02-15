@@ -152,3 +152,7 @@
                  (<= n (maximum-render-cycles)))
         (render-loop (dequeue! renderers-queue) (+ 1 n))))))
 
+(module+ test
+  ;; Tests to be run with raco test
+  (require rackunit))
+
