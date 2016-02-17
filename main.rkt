@@ -1,7 +1,7 @@
 #lang racket/base
 
-
-(require racket/draw
+(require (for-syntax racket/base)
+         racket/draw
          racket/class
          racket/contract
          math/matrix
@@ -142,12 +142,6 @@
 
 ; Helper to create shape constructors
 
-; shortcut for defining a shape union constructor with arguments and bind it to name
-; TODO: variant of define-shape that doesnt have arguments (not procedure)
-(define-syntax-rule (define-shape (name arg ...) shape ...)
-  (define (name arg ...)
-    (union (list shape ...))))
-
 ; define a shape which is a union of one or more shapes
 (define-syntax-rule (union shape-list)
   (λ shape-trans  ; shape-constructor
@@ -157,10 +151,12 @@
                [renderers (map (λ (s) (s t)) shape-list)]) ; list of shape-renderers, from list of shapes applied to T
           renderers)))))
 
-(define-syntax-rule (define-shape-prob (name arg ...) (prob shape) ...)
-  ; TODO: implement shape selector based on chance where "prob" is the
-  ; probability of picking that specific shape
-  (error "not implemented"))
+; shortcut for defining a shape union constructor with arguments and bind it to name
+; TODO: implement a form that accepts probability mappings to shape unions
+(define-syntax (define-shape stx)
+  (syntax-case stx ()
+    [(_ (name arg ...) shape ...) #'(define (name arg ...) (union (list shape ...)))]
+    [(_ name shape ...)           #'(define name (union (list shape ...)))]))
 
 ; evaluate shape union body in a for loop and then union all together
 (define-syntax-rule (loop-shape (for-clause ...) shape ...)
@@ -172,7 +168,7 @@
 (define (render-shape shape dc)
   (send dc set-pen "black" 0 'transparent)
   (send dc set-brush "black" 'solid)
-  
+
   (let ([renderers-queue (make-queue)])
     (enqueue! renderers-queue (shape (identity)))
     (let render-loop ([renderer (dequeue! renderers-queue)]
@@ -207,10 +203,10 @@
   (check-equal? (combine-transformation R (identity)) R "transformation identity property (2)")
 
   ;; ### Test invert operations
-  
+
   (define x (random-real -100 100))
   (define y (random-real -100 100))
-  
+
   (check-equal? (combine-transformation (translate x y) (translate (- x) (- y))) (identity) "translate invert property")
   (check-true (matrix= (transformation-geometric (combine-transformation (rotate x) (rotate (- x))))
                        (transformation-geometric (identity)))
