@@ -8,15 +8,16 @@
          racket/list
          racket/vector
          racket/math
-         data/queue)
+         data/queue
+         "random-utils.rkt")
 
 (provide (contract-out (rotate (-> real? transformation?))
                        (scale (->* (real?) (real?) transformation?))
                        (translate (-> real? real? transformation?))
                        (combine-transformation (->* () ()  #:rest (listof transformation?) transformation?))
-                       (render-shape (-> shape? (is-a?/c dc<%>) any/c))
-                       (make-square shape-constructor?)
-                       (make-circle shape-constructor?)
+                       (render-shape (-> shape/c (is-a?/c dc<%>) any/c))
+                       (make-square shape-constructor/c)
+                       (make-circle shape-constructor/c)
                        (maximum-render-cycles parameter?))
          define-shape
          loop-shape)
@@ -87,24 +88,24 @@
          trans))
 
 ; Types:
-; shape-renderer    : (-> (is-a?/c dc%) (listof shape-renderer?))
-; shape             : (-> transformation? shape-renderer?)
-; shape-constructor : (-> transformation? shape?)
+; shape-renderer    : (-> (is-a?/c dc%) (listof shape-renderer/c))
+; shape             : (-> transformation? shape-renderer/c)
+; shape-constructor : (-> transformation? shape/c)
 
-(define shape-renderer?
+(define shape-renderer/c
   (-> (is-a?/c dc<%>) (listof procedure?)))
 
-(define shape?
-  (-> transformation? shape-renderer?))
+(define shape/c
+  (-> transformation? shape-renderer/c))
 
-(define shape-constructor?
-  (->* () () #:rest (listof transformation?) shape?))
+(define shape-constructor/c
+  (->* () () #:rest (listof transformation?) shape/c))
 
 ; Shape constructors
 
 (define (make-square . shape-trans) ; shape constructor
   (λ (curr-trans) ; shape
-    (let* ([trans (apply combine-transformation (cons curr-trans shape-trans))]
+    (let* ([trans (apply combine-transformation curr-trans shape-trans)]
            [geom (transformation-geometric trans)]
            [a (matrix* geom (col-matrix [-0.5 -0.5 1]))]
            [b (matrix* geom (col-matrix [-0.5  0.5 1]))]
@@ -144,17 +145,46 @@
 
 ; define a shape which is a union of one or more shapes
 (define-syntax-rule (union shape-list)
-  (λ shape-trans  ; shape-constructor
-    (λ (curr-trans) ; shape
+  (λ rtrans-list  ; shape-constructor
+    (λ (atrans) ; shape
+      ; combine its transformation with current transformation into ftrans:
+      (define ftrans (apply combine-transformation atrans rtrans-list))
       (λ (dc) ; shape-renderer
-        (let* ([t (apply combine-transformation (cons curr-trans shape-trans))] ; combine its transformation with current transformation into T
-               [renderers (map (λ (s) (s t)) shape-list)]) ; list of shape-renderers, from list of shapes applied to T
-          renderers)))))
+        ; list of shape-renderers, from list of shapes applied to ftrans
+        (map (λ (s) (s ftrans)) shape-list)))))
+
+; creates a shape-constructor that randomly selects a shape to render
+; every time it renders
+(define/contract
+  (prob-shape weighted-shapes)
+
+  (-> (listof (cons/c real? shape/c)) shape-constructor/c)
+
+  (λ rtrans-list  ; shape-constructor
+    ; construct shapes
+    ; (define weighted-shapes
+    ;   (map (λ (wsc) (cons (car wsc) (apply (cdr wsc) rtrans-list)))
+    ;        weighted-shape-cons))
+
+    (λ (atrans) ; shape
+      ; combine its transformation with current transformation into ftrans:
+      (define ftrans (apply combine-transformation atrans rtrans-list))
+
+      (λ (dc) ; shape-renderer
+        (define s (random-choice weighted-shapes))
+        ((s ftrans) dc)))))
 
 ; shortcut for defining a shape union constructor with arguments and bind it to name
-; TODO: implement a form that accepts probability mappings to shape unions
 (define-syntax (define-shape stx)
-  (syntax-case stx ()
+  (syntax-case stx (=>)
+    [(_ name (p => shape ...) ...)
+     #'(define name
+         (prob-shape (list (cons p ((union (list shape ...)))) ...)))]
+
+    [(_ (name arg ...) (p => shape ...) ...)
+     #'(define (name arg ...)
+         (prob-shape (list (cons p ((union (list shape ...)))) ...)))]
+
     [(_ (name arg ...) shape ...) #'(define (name arg ...) (union (list shape ...)))]
     [(_ name shape ...)           #'(define name (union (list shape ...)))]))
 
@@ -164,7 +194,7 @@
            ((union (list shape ...))))))
 
 ; Render a shape in a device context
-; render-shape: (-> shape? (is-a?/c dc<%>))
+; render-shape: (-> shape/c (is-a?/c dc<%>))
 (define (render-shape shape dc)
   (send dc set-pen "black" 0 'transparent)
   (send dc set-brush "black" 'solid)
@@ -184,9 +214,6 @@
 (module+ test
   ;; # Tests
   (require rackunit)
-
-  (define (random-real min max)
-    (+ (/ (random (* (- max min) 10000)) 10000) min))
 
   (define (random-transformation)
     (transformation (matrix [[(random-real -1 1) (random-real -1 1) (random-real -1 1)]
