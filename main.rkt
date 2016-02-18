@@ -1,11 +1,11 @@
 #lang racket/base
 
-(require "transformation.rkt"
-         "render.rkt"
-         "shape.rkt")
+(require "private/transformation.rkt"
+         "private/render.rkt"
+         "private/shape.rkt")
 
-(provide (all-from-out "transformation.rkt")
-         (all-from-out "render.rkt")
-         (all-from-out "shape.rkt"))
+(provide (all-from-out "private/transformation.rkt")
+         (all-from-out "private/render.rkt")
+         (all-from-out "private/shape.rkt"))
 
 

@@ -10,13 +10,13 @@
          "transformation.rkt"
          "random-utils.rkt")
 
-(provide make-square
-         make-circle
+(provide (contract-out [make-square shape-constructor/c]
+                       [make-circle shape-constructor/c]
+                       [shape/c contract?]
+                       [shape-constructor/c contract?]
+                       [shape-renderer/c contract?])
          define-shape
-         loop-shape
-         shape/c
-         shape-constructor/c
-         shape-renderer/c)
+         loop-shape)
 
 ; Types:
 ; shape-renderer    : (-> (is-a?/c dc%) (listof shape-renderer/c))
@@ -34,10 +34,7 @@
 
 ; Shape constructors
 
-(define/contract (make-square . rtrans-list) ; shape constructor
-
-  shape-constructor/c
-
+(define (make-square . rtrans-list) ; shape constructor
   (λ (atrans) ; shape
     (let* ([ftrans (apply combine-transformation atrans rtrans-list)]
            [geom (transformation-geometric ftrans)]
@@ -54,10 +51,7 @@
         (send dc draw-polygon points)
         '()))))
 
-(define/contract (make-circle . rtrans-list) ; shape constructor
-
-  shape-constructor/c
-
+(define (make-circle . rtrans-list) ; shape constructor
   (λ (atrans) ; shape
     (let* ([ftrans (apply combine-transformation (cons atrans rtrans-list))]
            [geom (transformation-geometric ftrans)]
@@ -92,11 +86,8 @@
 
 ; creates a shape-constructor that randomly selects a shape to render
 ; every time it renders
-(define/contract
-  (prob-shape weighted-shapes)
-
-  (-> (listof (cons/c real? shape/c)) shape-constructor/c)
-
+; (-> (listof (cons/c real? shape/c)) shape-constructor/c)
+(define (prob-shape weighted-shapes)
   (λ rtrans-list  ; shape-constructor
     ; construct shapes
     ; (define weighted-shapes

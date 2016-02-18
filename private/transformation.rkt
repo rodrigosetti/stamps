@@ -5,34 +5,17 @@
 (require racket/contract
          racket/vector
          math/matrix
+         "linalg-utils.rkt"
          "random-utils.rkt")
 
-(provide rotate
-         scale
-         translate
-         identity
+(provide (contract-out [rotate (-> real? transformation?)]
+                       [scale (->* (real?) (real?) transformation?)]
+                       [translate (-> real? real? transformation?)]
+                       [identity (-> transformation?)]
+                       [combine-transformation (->* () ()  #:rest (listof transformation?) transformation?)])
          transformation?
          transformation-geometric
-         transformation-color
-         combine-transformation)
-
-;; Linear algebra combinators
-
-(define (rotation-matrix theta)
-  (matrix [[(cos theta) (- (sin theta)) 0]
-           [(sin theta) (cos theta)     0]
-           [0           0               1]]))
-
-(define (scaling-matrix sx sy)
-  (matrix [[sx 0  0]
-           [0  sy 0]
-           [0  0  1]]))
-
-(define (translation-matrix dx dy)
-  (matrix [[1 0 dx]
-           [0 1 dy]
-           [0 0 1 ]]))
-
+         transformation-color)
 
 ;; transformation definition
 
@@ -51,16 +34,13 @@
 (define (identity)
   (geometric-transformation (identity-matrix 3)))
 
-(define/contract (rotate theta)
-  (-> real? transformation?)
+(define (rotate theta)
   (geometric-transformation (rotation-matrix theta)))
 
-(define/contract (scale sx [sy sx])
-  (->* (real?) (real?) transformation?)
+(define (scale sx [sy sx])
   (geometric-transformation (scaling-matrix sx sy)))
 
-(define/contract (translate tx ty)
-  (-> real? real? transformation?)
+(define (translate tx ty)
   (geometric-transformation (translation-matrix tx ty)))
 
 (define (hue h)
@@ -73,10 +53,7 @@
   (color-transformation (vector 0 0 b)))
 
 ;; Transformations combinators
-(define/contract (combine-transformation . trans)
-
-  (->* () ()  #:rest (listof transformation?) transformation?)
-
+(define (combine-transformation . trans)
   (foldl (λ (a b) (transformation (matrix* (transformation-geometric b)
                                            (transformation-geometric a))
                                   (vector-map + (transformation-color a)
