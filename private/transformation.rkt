@@ -97,14 +97,20 @@
   (define x (random-real -100 100))
   (define y (random-real -100 100))
 
-  (check-equal? (combine-transformation (translate x y) (translate (- x) (- y))) (identity) "translate invert property")
+  (check matrix=
+         (transformation-geometric (combine-transformation (translate x y) (translate (- x) (- y))))
+         (transformation-geometric (identity))
+         "translate invert property")
   (check matrix=
          (transformation-geometric (combine-transformation (rotate x) (rotate (- x))))
          (transformation-geometric (identity))
          "rotate invert property")
 
   (when (not (or (= x 0) (= y 0)))
-    (check-equal? (combine-transformation (scale x y) (scale (/ 1 x) (/ 1 y))) (identity) "rotate invert property"))
+    (check matrix=
+           (transformation-geometric (combine-transformation (scale x y) (scale (/ 1 x) (/ 1 y))))
+           (transformation-geometric (identity))
+           "rotate invert property"))
 
   ;;; ### Null operations
 
