@@ -22,7 +22,7 @@
   (send dc set-brush "black" 'solid)
 
   (define renderers-queue (make-queue))
-  (enqueue! renderers-queue (shape (identity)))
+  (enqueue! renderers-queue (shape identity))
 
   (let render-loop ([renderer (dequeue! renderers-queue)]
                     [n 0])

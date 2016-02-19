@@ -4,16 +4,21 @@
 
 (require racket/contract
          racket/vector
+         racket/function
          math/matrix
          "linalg-utils.rkt"
          "random-utils.rkt")
 
-(provide (contract-out [rotate (-> real? transformation?)]
-                       [scale (->* (real?) (real?) transformation?)]
-                       [translate (-> real? real? transformation?)]
-                       [identity (-> transformation?)]
-                       [combine-transformation (->* () ()  #:rest (listof transformation?) transformation?)])
+(provide (contract-out [rotate (-> real? transformation-promise/c)]
+                       [scale (->* (real?) (real?) transformation-promise/c)]
+                       [translate (-> real? real? transformation-promise/c)]
+                       [hue (-> real? transformation-promise/c)]
+                       [saturation (-> real? transformation-promise/c)]
+                       [brightness (-> real? transformation-promise/c)]
+                       [identity transformation-promise/c]
+                       [combine-transformation (->* () ()  #:rest (listof transformation-promise/c) transformation?)])
          transformation?
+         transformation-promise/c
          transformation-geometric
          transformation-color)
 
@@ -25,32 +30,38 @@
 
 ;; Transformations constructors
 
-(define (geometric-transformation matrix)
-  (transformation matrix #[0 0 0]))
+(define transformation-promise/c
+  (-> transformation?))
 
-(define (color-transformation hsb)
-  (transformation (identity-matrix 3) hsb))
+(define (transformation-promise matrix hsb)
+  (thunk (transformation matrix hsb)))
 
-(define (identity)
-  (geometric-transformation (identity-matrix 3)))
+(define (geometric-transformation-promise matrix)
+  (transformation-promise matrix #[0 0 0]))
+
+(define (color-transformation-promise hsb)
+  (transformation-promise (identity-matrix 3) hsb))
+
+(define identity
+  (geometric-transformation-promise (identity-matrix 3)))
 
 (define (rotate theta)
-  (geometric-transformation (rotation-matrix theta)))
+  (geometric-transformation-promise (rotation-matrix theta)))
 
 (define (scale sx [sy sx])
-  (geometric-transformation (scaling-matrix sx sy)))
+  (geometric-transformation-promise (scaling-matrix sx sy)))
 
 (define (translate tx ty)
-  (geometric-transformation (translation-matrix tx ty)))
+  (geometric-transformation-promise (translation-matrix tx ty)))
 
 (define (hue h)
-  (color-transformation (vector h 0 0)))
+  (color-transformation-promise (vector h 0 0)))
 
 (define (saturation s)
-  (color-transformation (vector 0 s 0)))
+  (color-transformation-promise (vector 0 s 0)))
 
 (define (brightness b)
-  (color-transformation (vector 0 0 b)))
+  (color-transformation-promise (vector 0 0 b)))
 
 ;; Transformations combinators
 (define (combine-transformation . trans)
@@ -59,8 +70,7 @@
                                   (vector-map + (transformation-color a)
                                               (transformation-color b))))
          (identity)
-         trans))
-
+         (map (λ (t) (t)) trans))) ; apply all promises
 
 ;; ------------------------------------------------------------------------
 
@@ -69,18 +79,18 @@
   (require rackunit)
 
   (define (random-transformation)
-    (transformation (matrix [[(random-real -1 1) (random-real -1 1) (random-real -1 1)]
-                             [(random-real 0 1) (random-real -1 1) (random-real -1 1)]
-                             [(random-real 0 1) (random-real -1 1) (random-real -1 1)]])
-                    (vector (random-real -1 1) (random-real -1 1) (random-real -1 1))))
+    (transformation-promise (matrix [[(random-real -1 1) (random-real -1 1) (random-real -1 1)]
+                                     [(random-real 0 1) (random-real -1 1) (random-real -1 1)]
+                                     [(random-real 0 1) (random-real -1 1) (random-real -1 1)]])
+                            (vector (random-real -1 1) (random-real -1 1) (random-real -1 1))))
 
   ;; ## Geometric transformation tests
 
   ;; ### combining with identity is innocuous
 
   (define R (random-transformation))
-  (check-equal? (combine-transformation (identity) R) R "transformation identity property (1)")
-  (check-equal? (combine-transformation R (identity)) R "transformation identity property (2)")
+  (check-equal? (combine-transformation identity R) (R) "transformation identity property (1)")
+  (check-equal? (combine-transformation R identity) (R) "transformation identity property (2)")
 
   ;; ### Test invert operations
 
@@ -88,16 +98,16 @@
   (define y (random-real -100 100))
 
   (check-equal? (combine-transformation (translate x y) (translate (- x) (- y))) (identity) "translate invert property")
-  (check-true (matrix= (transformation-geometric (combine-transformation (rotate x) (rotate (- x))))
-                       (transformation-geometric (identity)))
-              "rotate invert property")
+  (check matrix=
+         (transformation-geometric (combine-transformation (rotate x) (rotate (- x))))
+         (transformation-geometric (identity))
+         "rotate invert property")
 
   (when (not (or (= x 0) (= y 0)))
     (check-equal? (combine-transformation (scale x y) (scale (/ 1 x) (/ 1 y))) (identity) "rotate invert property"))
 
   ;;; ### Null operations
 
-  (check-equal? (translate 0 0) (identity) "translate zero is identity")
-  (check-equal? (rotate 0) (identity) "rotate zero is identity")
-  (check-equal? (scale 1 1) (identity) "scale one is identity")
-  )
+  (check-equal? ((translate 0 0)) (identity) "translate zero is identity")
+  (check-equal? ((rotate 0)) (identity) "rotate zero is identity")
+  (check-equal? ((scale 1 1)) (identity) "scale one is identity"))
