@@ -34,7 +34,7 @@
   (-> transformation?))
 
 (define (transformation-promise matrix hsb)
-  (thunk (transformation matrix hsb)))
+  (const (transformation matrix hsb)))
 
 (define (geometric-transformation-promise matrix)
   (transformation-promise matrix #[0 0 0]))
@@ -94,8 +94,8 @@
 
   ;; ### Test invert operations
 
-  (define x (random-real -100 100))
-  (define y (random-real -100 100))
+  (define x (random-real -10 10))
+  (define y (random-real -10 10))
 
   (check matrix=
          (transformation-geometric (combine-transformation (translate x y) (translate (- x) (- y))))
@@ -106,11 +106,13 @@
          (transformation-geometric (identity))
          "rotate invert property")
 
-  (when (not (or (= x 0) (= y 0)))
-    (check matrix=
-           (transformation-geometric (combine-transformation (scale x y) (scale (/ 1 x) (/ 1 y))))
-           (transformation-geometric (identity))
-           "rotate invert property"))
+  (define sx (random-real 1 5))
+  (define sy (random-real 1 5))
+
+  (check matrix=
+          (transformation-geometric (combine-transformation (scale sx sy) (scale (/ 1 sx) (/ 1 sy))))
+          (transformation-geometric (identity))
+          "scale invert property")
 
   ;;; ### Null operations
 
