@@ -2,21 +2,23 @@
 
 ; defines the transformation data structure and combinators
 
-(require racket/contract
+(require (for-syntax racket/base)
+         racket/contract
          racket/vector
          racket/function
          math/matrix
          "linalg-utils.rkt"
          "random-utils.rkt")
 
-(provide (contract-out [rotate (-> real? transformation-promise/c)]
-                       [scale (->* (real?) (real?) transformation-promise/c)]
-                       [translate (-> real? real? transformation-promise/c)]
-                       [hue (-> real? transformation-promise/c)]
-                       [saturation (-> real? transformation-promise/c)]
-                       [brightness (-> real? transformation-promise/c)]
-                       [identity transformation-promise/c]
-                       [combine-transformation (->* () ()  #:rest (listof transformation-promise/c) transformation?)])
+(provide (contract-out
+          [identity transformation-promise/c]
+          [combine-transformation (->* () ()  #:rest (listof transformation-promise/c) transformation?)])
+         rotate
+         scale
+         translate
+         hue
+         saturation
+         brightness
          transformation?
          transformation-promise/c
          transformation-geometric
@@ -33,35 +35,86 @@
 (define transformation-promise/c
   (-> transformation?))
 
-(define (transformation-promise matrix hsb)
+(define (transformation-const matrix hsb)
   (const (transformation matrix hsb)))
 
-(define (geometric-transformation-promise matrix)
-  (transformation-promise matrix #[0 0 0]))
+(define (geometric-transformation-const matrix)
+  (transformation-const matrix #[0 0 0]))
 
-(define (color-transformation-promise hsb)
-  (transformation-promise (identity-matrix 3) hsb))
+(define (color-transformation-const hsb)
+  (transformation-const (identity-matrix 3) hsb))
+
+(define-syntax-rule (transformation-thunk matrix hsb)
+  (thunk (transformation matrix hsb)))
+
+(define-syntax-rule (geometric-transformation-thunk matrix)
+  (transformation-thunk matrix #[0 0 0]))
+
+(define-syntax-rule (color-transformation-thunk hsb)
+  (transformation-thunk (identity-matrix 3) hsb))
 
 (define identity
-  (geometric-transformation-promise (identity-matrix 3)))
+  (geometric-transformation-const (identity-matrix 3)))
 
-(define (rotate theta)
-  (geometric-transformation-promise (rotation-matrix theta)))
+(define-syntax (rotate stx)
+  (syntax-case stx (..)
+    [(_ v)
+      #'(geometric-transformation-const (rotation-matrix v))]
+    [(_ min .. max)
+      #'(geometric-transformation-thunk (rotation-matrix (random-real min max)))]))
 
-(define (scale sx [sy sx])
-  (geometric-transformation-promise (scaling-matrix sx sy)))
+(define-syntax (scale stx)
+  (syntax-case stx (..)
+    [(_ x)
+     #'(geometric-transformation-const (scaling-matrix x x))]
+    [(_ x y)
+     #'(geometric-transformation-const (scaling-matrix x y))]
+    [(_ x1 .. x2)
+     #'(geometric-transformation-thunk (let ([n (random-real x1 x2)]) (scaling-matrix n n)))]
+    [(_ x1 .. x2 y)
+     #'(geometric-transformation-thunk (scaling-matrix (random-real x1 x2) y))]
+    [(_ x y1 .. y2)
+     #'(geometric-transformation-thunk (scaling-matrix x (random-real y1 y2)))]
+    [(_ x1 .. x2 y1 .. y2)
+     #'(geometric-transformation-thunk (scaling-matrix (random-real x1 x2)
+                                                       (random-real y1 y2)))]))
 
-(define (translate tx ty)
-  (geometric-transformation-promise (translation-matrix tx ty)))
+(define-syntax (translate stx)
+  (syntax-case stx (..)
+    [(_ x)
+     #'(geometric-transformation-const (translation-matrix x x))]
+    [(_ x y)
+     #'(geometric-transformation-const (translation-matrix x y))]
+    [(_ x1 .. x2)
+     #'(geometric-transformation-thunk (let ([n (random-real x1 x2)]) (translation-matrix n n)))]
+    [(_ x1 .. x2 y)
+     #'(geometric-transformation-thunk (translation-matrix (random-real x1 x2) y))]
+    [(_ x y1 .. y2)
+     #'(geometric-transformation-thunk (translation-matrix x (random-real y1 y2)))]
+    [(_ x1 .. x2 y1 .. y2)
+     #'(geometric-transformation-thunk (translation-matrix (random-real x1 x2)
+                                                       (random-real y1 y2)))]))
 
-(define (hue h)
-  (color-transformation-promise (vector h 0 0)))
+(define-syntax (hue stx)
+  (syntax-case stx (..)
+    [(_ v)
+     #'(color-transformation-const (vector v 0 0))]
+    [(_ min .. max)
+     #'(color-transformation-thunk (vector (random-real min max) 0 0))]))
 
-(define (saturation s)
-  (color-transformation-promise (vector 0 s 0)))
+(define-syntax (saturation stx)
+  (syntax-case stx (..)
+    [(_ v)
+     #'(color-transformation-const (vector 0 v 0))]
+    [(_ min .. max)
+     #'(color-transformation-thunk (vector 0 (random-real min max) 0))]))
 
-(define (brightness b)
-  (color-transformation-promise (vector 0 0 b)))
+(define-syntax (brightness stx)
+  (syntax-case stx (..)
+    [(_ v)
+     #'(color-transformation-const (vector 0 0 v))]
+    [(_ min .. max)
+     #'(color-transformation-thunk (vector 0 0 (random-real min max)))]))
 
 ;; Transformations combinators
 (define (combine-transformation . trans)
@@ -79,10 +132,10 @@
   (require rackunit)
 
   (define (random-transformation)
-    (transformation-promise (matrix [[(random-real -1 1) (random-real -1 1) (random-real -1 1)]
-                                     [(random-real 0 1) (random-real -1 1) (random-real -1 1)]
-                                     [(random-real 0 1) (random-real -1 1) (random-real -1 1)]])
-                            (vector (random-real -1 1) (random-real -1 1) (random-real -1 1))))
+    (transformation-const (matrix [[(random-real -1 1) (random-real -1 1) (random-real -1 1)]
+                                   [(random-real 0 1) (random-real -1 1) (random-real -1 1)]
+                                   [(random-real 0 1) (random-real -1 1) (random-real -1 1)]])
+                          (vector (random-real -1 1) (random-real -1 1) (random-real -1 1))))
 
   ;; ## Geometric transformation tests
 
