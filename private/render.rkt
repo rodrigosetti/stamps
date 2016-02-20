@@ -6,7 +6,7 @@
          racket/contract
          racket/class
          racket/draw
-         "transformation.rkt"
+         "adjustments.rkt"
          "shape.rkt")
 
 (provide (contract-out [maximum-render-cycles parameter?]
