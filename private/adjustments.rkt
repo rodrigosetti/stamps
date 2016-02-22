@@ -22,39 +22,43 @@
          adjustment?
          adjustment-promise/c
          adjustment-geometric
-         adjustment-color)
+         adjustment-hue
+         adjustment-saturation
+         adjustment-brightness)
 
 ;; adjustment definition
 
 ; - geometric: matrix?
-; - color: (vector/c real? real? real?) -- HSV deltas
-(struct adjustment (geometric color) #:transparent)
+; - hue: real?
+; - saturation: real?
+; - brightness: real?
+(struct adjustment (geometric hue saturation brightness) #:transparent)
 
 ;; adjustment constructors
 
 (define adjustment-promise/c
   (-> adjustment?))
 
-(define (adjustment-const matrix hsb)
-  (const (adjustment matrix hsb)))
+(define (adjustment-const [matrix (identity-matrix 3)] [h 0] [s 0] [b 0])
+  (const (adjustment matrix h s b)))
 
-(define (geometric-adjustment-const matrix)
-  (adjustment-const matrix #[0 0 0]))
+(define (geometric-adjustment-const [matrix (identity-matrix 3)])
+  (adjustment-const matrix))
 
-(define (color-adjustment-const hsb)
-  (adjustment-const (identity-matrix 3) hsb))
+(define (color-adjustment-const [h 0] [s 0] [b 0])
+  (adjustment-const (identity-matrix 3) h s b))
 
-(define-syntax-rule (adjustment-thunk matrix hsb)
-  (thunk (adjustment matrix hsb)))
+(define-syntax-rule (adjustment-thunk matrix h s b)
+  (thunk (adjustment matrix h s b)))
 
 (define-syntax-rule (geometric-adjustment-thunk matrix)
-  (adjustment-thunk matrix #[0 0 0]))
+  (adjustment-thunk matrix 0 0 0))
 
-(define-syntax-rule (color-adjustment-thunk hsb)
-  (adjustment-thunk (identity-matrix 3) hsb))
+(define-syntax-rule (color-adjustment-thunk h s b)
+  (adjustment-thunk (identity-matrix 3) h s b))
 
 (define identity
-  (geometric-adjustment-const (identity-matrix 3)))
+  (geometric-adjustment-const))
 
 (define-syntax (rotate stx)
   (syntax-case stx (..)
@@ -120,8 +124,11 @@
 (define (combine-adjustment . trans)
   (foldl (λ (a b) (adjustment (matrix* (adjustment-geometric b)
                                        (adjustment-geometric a))
-                              (vector-map + (adjustment-color a)
-                                          (adjustment-color b))))
+                              ;; TODO: implement correct color adjustment logic
+                              ;; see http://www.contextfreeart.org/mediawiki/index.php/Shape_adjustment#Color_Adjustments
+                              (+ (adjustment-hue a) (adjustment-hue b))
+                              (+ (adjustment-saturation a) (adjustment-saturation b))
+                              (+ (adjustment-brightness a) (adjustment-brightness b))))
          (identity)
          (map (λ (t) (t)) trans))) ; apply all promises
 
@@ -135,7 +142,19 @@
     (adjustment-const (matrix [[(random-real -1 1) (random-real -1 1) (random-real -1 1)]
                                [(random-real 0 1) (random-real -1 1) (random-real -1 1)]
                                [(random-real 0 1) (random-real -1 1) (random-real -1 1)]])
-                      (vector (random-real -1 1) (random-real -1 1) (random-real -1 1))))
+                      (random-real -360 360)
+                      (random-real -1 1)
+                      (random-real -1 1)))
+
+  (define epsilon 1e-10)
+
+  (define (check-adjustment-=? adj1 adj2 message)
+    (check (λ (x y) (< (matrix-relative-error (adjustment-geometric x) (adjustment-geometric y)) epsilon))
+           adj1 adj1
+           (string-append message " : geometric should be equal"))
+    (check-= (adjustment-hue adj1) (adjustment-hue adj2) epsilon (string-append message " : hue should be equal"))
+    (check-= (adjustment-saturation adj1) (adjustment-saturation adj2) epsilon (string-append message " : saturation should be equal"))
+    (check-= (adjustment-brightness adj1) (adjustment-brightness adj2) epsilon (string-append message " : brightness should be equal")))
 
   ;; ## Geometric adjustment tests
 
@@ -150,22 +169,20 @@
   (define x (random-real -10 10))
   (define y (random-real -10 10))
 
-  (check matrix=
-         (adjustment-geometric (combine-adjustment (translate x y) (translate (- x) (- y))))
-         (adjustment-geometric (identity))
-         "translate invert property")
-  (check matrix=
-         (adjustment-geometric (combine-adjustment (rotate x) (rotate (- x))))
-         (adjustment-geometric (identity))
-         "rotate invert property")
+  (check-adjustment-=? (combine-adjustment (translate x y) (translate (- x) (- y)))
+                       (identity)
+                       "translate invert property")
+
+  (check-adjustment-=? (combine-adjustment (rotate x) (rotate (- x)))
+                       (identity)
+                       "rotate invert property")
 
   (define sx (random-real 1 5))
   (define sy (random-real 1 5))
 
-  (check matrix=
-          (adjustment-geometric (combine-adjustment (scale sx sy) (scale (/ 1 sx) (/ 1 sy))))
-          (adjustment-geometric (identity))
-          "scale invert property")
+  (check-adjustment-=? (combine-adjustment (scale sx sy) (scale (/ 1 sx) (/ 1 sy)))
+                       (identity)
+                       "scale invert property")
 
   ;;; ### Null operations
 
