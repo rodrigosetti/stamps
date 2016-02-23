@@ -24,10 +24,10 @@
   (-> (is-a?/c dc<%>) (listof procedure?)))
 
 (define shape/c
-  (->* () () #:rest (listof adjustment-promise/c) shape-renderer/c))
+  (->* () () #:rest (listof adjustment-delta-promise/c) shape-renderer/c))
 
 (define shape-constructor/c
-  (->* () () #:rest (listof adjustment-promise/c) shape/c))
+  (->* () () #:rest (listof adjustment-delta-promise/c) shape/c))
 
 ; Shape constructors
 
