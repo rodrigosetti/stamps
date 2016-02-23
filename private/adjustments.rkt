@@ -4,12 +4,10 @@
 
 (require (for-syntax racket/base)
          racket/contract
-         racket/vector
          racket/function
          math/matrix
          racket/match
-         "linalg-utils.rkt"
-         "random-utils.rkt")
+         "linalg-utils.rkt")
 
 (provide (contract-out
           [identity adjustment-delta-promise/c]
@@ -46,69 +44,49 @@
 (define-syntax (rotate stx)
   (syntax-case stx (..)
     [(_ v)
-     #'(const (geometric-delta (rotation-matrix v)))]
-    [(_ min .. max)
-     #'(thunk (geometric-delta (rotation-matrix (random-real min max))))]))
+     #'(const (geometric-delta (rotation-matrix v)))]))
 
 (define-syntax (scale stx)
   (syntax-case stx (..)
     [(_ x)
-     #'(const (geometric-delta (scaling-matrix x x)))]
+     #'(thunk (geometric-delta (scaling-matrix x x)))]
     [(_ x y)
-     #'(const (geometric-delta (scaling-matrix x y)))]
-    [(_ x1 .. x2)
-     #'(thunk (geometric-delta (let ([n (random-real x1 x2)]) (scaling-matrix n n))))]
-    [(_ x1 .. x2 y)
-     #'(thunk (geometric-delta (scaling-matrix (random-real x1 x2) y)))]
-    [(_ x y1 .. y2)
-     #'(thunk (geometric-delta (scaling-matrix x (random-real y1 y2))))]
-    [(_ x1 .. x2 y1 .. y2)
-     #'(thunk (geometric-delta (scaling-matrix (random-real x1 x2)
-                                                    (random-real y1 y2))))]))
+     #'(const (geometric-delta (scaling-matrix x y)))]))
 
   (define-syntax (translate stx)
     (syntax-case stx (..)
       [(_ x)
-       #'(const (geometric-delta (translation-matrix x x)))]
+       #'(thunk (geometric-delta (translation-matrix x x)))]
       [(_ x y)
-       #'(const (geometric-delta (translation-matrix x y)))]
-      [(_ x1 .. x2)
-       #'(thunk (geometric-delta (let ([n (random-real x1 x2)]) (translation-matrix n n))))]
-      [(_ x1 .. x2 y)
-       #'(thunk (geometric-delta (translation-matrix (random-real x1 x2) y)))]
-      [(_ x y1 .. y2)
-       #'(thunk (geometric-delta (translation-matrix x (random-real y1 y2))))]
-      [(_ x1 .. x2 y1 .. y2)
-       #'(thunk (geometric-delta (translation-matrix (random-real x1 x2)
-                                                          (random-real y1 y2))))]))
+       #'(thunk (geometric-delta (translation-matrix x y)))]))
 
 (define-syntax (hue stx)
   (syntax-case stx (..)
     [(_ v)
-     #'(const (color-delta v 0 0 0))]
-    [(_ min .. max)
-     #'(thunk (color-delta (random-real min max) 0 0 0))]))
+     #'(thunk (color-delta v 0 0 0))]
+    [(_ v t)
+     #'(thunk (target-color-delta v 0 0 0  t 0 0 0))]))
 
 (define-syntax (saturation stx)
   (syntax-case stx (..)
     [(_ v)
-     #'(const (color-delta 0 v 0 0))]
-    [(_ min .. max)
-     #'(thunk (color-delta 0 (random-real min max) 0 0))]))
+     #'(thunk (color-delta 0 v 0 0))]
+    [(_ v t)
+     #'(thunk (color-delta 0 v 0 0  0 t 0 0))]))
 
 (define-syntax (brightness stx)
   (syntax-case stx (..)
     [(_ v)
-     #'(const (color-delta 0 0 v 0))]
-    [(_ min .. max)
-     #'(thunk (color-delta 0 0 (random-real min max) 0))]))
+     #'(thunk (color-delta 0 0 v 0))]
+    [(_ v t)
+     #'(thunk (color-delta 0 0 v 0  0 0 t 0))]))
 
 (define-syntax (alpha stx)
   (syntax-case stx (..)
     [(_ v)
-     #'(const (color-delta 0 0 0 v))]
-    [(_ min .. max)
-     #'(thunk (color-delta 0 0 0 (random-real min max)))]))
+     #'(thunk (color-delta 0 0 0 v))]
+    [(_ v t)
+     #'(thunk (color-delta 0 0 0 v  0 0 0 t))]))
 
 ; if target is undefined, return val changed % towards 0 or 1, depending if % is negative or positive (respectively).
 ; if target is defined, return val changed % towards target if % is positive, otherwise return val changed to 0 or 1,
@@ -159,7 +137,8 @@
 
 (module+ test
   ;; # Tests
-  (require rackunit)
+  (require rackunit
+           "random-utils.rkt")
 
 
   (define (random-geometric-delta)
