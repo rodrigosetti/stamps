@@ -19,6 +19,7 @@
 ; render-shape: (-> shape/c (is-a?/c dc<%>))
 (define (render-shape shape dc)
   (send dc set-pen "black" 0 'transparent)
+  (send dc set-smoothing 'smoothed)
 
   (define renderers-queue (make-queue))
   (enqueue! renderers-queue (shape identity))

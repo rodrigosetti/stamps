@@ -6,6 +6,7 @@
          racket/contract
          racket/list
          racket/math
+         racket/sequence
          math/matrix
          "adjustments.rkt"
          "random-utils.rkt"
@@ -22,7 +23,7 @@
 ; Contracts
 
 (define shape-renderer/c
-  (-> (is-a?/c dc<%>) (listof procedure?)))
+  (-> (is-a?/c dc<%>) (sequence/c procedure?)))
 
 (define shape/c
   (-> adjustment? shape-renderer/c))
@@ -39,27 +40,29 @@
   (define-values (r g b) (hsb->rgb (adjustment-hue adj)
                                    (adjustment-saturation adj)
                                    (adjustment-brightness adj)))
-  (define color (make-color (unit-to-byte r)
-                            (unit-to-byte g)
-                            (unit-to-byte b)
-                            (adjustment-alpha adj)))
+  (define color (make-object color%
+                             (unit-to-byte r)
+                             (unit-to-byte g)
+                             (unit-to-byte b)
+                             (adjustment-alpha adj)))
   (send dc set-brush color 'solid))
 
 ; Shape constructors
+
+(define square-points (matrix [[-1/2 -1/2 1/2  1/2]
+                               [-1/2  1/2 1/2 -1/2]
+                               [   1    1   1    1]]))
 
 (define (make-square . rel-adjs) ; shape constructor
   (λ (ctx-adj) ; shape
     (λ (dc) ; shape-renderer
       (define adj (apply combine-adjustment ctx-adj rel-adjs))
       (define geom (adjustment-geometric adj))
-      (define a (matrix* geom (col-matrix [-0.5 -0.5 1])))
-      (define b (matrix* geom (col-matrix [-0.5  0.5 1])))
-      (define c (matrix* geom (col-matrix [ 0.5  0.5 1])))
-      (define d (matrix* geom (col-matrix [ 0.5 -0.5 1])))
-      (define points (list (cons (matrix-ref a 0 0) (matrix-ref a 1 0))
-                           (cons (matrix-ref b 0 0) (matrix-ref b 1 0))
-                           (cons (matrix-ref c 0 0) (matrix-ref c 1 0))
-                           (cons (matrix-ref d 0 0) (matrix-ref d 1 0))))
+      (define x (matrix* geom square-points))
+      (define points (list (cons (matrix-ref x 0 0) (matrix-ref x 1 0))
+                           (cons (matrix-ref x 0 1) (matrix-ref x 1 1))
+                           (cons (matrix-ref x 0 2) (matrix-ref x 1 2))
+                           (cons (matrix-ref x 0 3) (matrix-ref x 1 3))))
 
       (apply-color-adjustments dc adj)
       (send dc draw-polygon points)
@@ -70,7 +73,6 @@
     (λ (dc) ; shape-renderer
           (define adj (apply combine-adjustment ctx-adj rel-adjs))
           (define geom (adjustment-geometric adj))
-          (define orig (matrix* geom (col-matrix [0 0 1])))
           (define start (matrix* geom (col-matrix [1 0 1])))
           (define path (new dc-path%))
 
@@ -78,7 +80,7 @@
           (send path move-to
                 (matrix-ref start 0 0)
                 (matrix-ref start 1 0))
-          (for ([a (range -0.1 (* 2 pi) 0.1)])
+          (for ([a (range -0.1 (* 2 pi) 0.2)])
             (define p (matrix* geom (col-matrix ((cos a) (sin a) 1))))
             (send path line-to
                   (matrix-ref p 0 0)
