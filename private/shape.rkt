@@ -25,7 +25,7 @@
   (-> (is-a?/c dc<%>) (listof procedure?)))
 
 (define shape/c
-  (->* () () #:rest (listof adjustment-delta-promise/c) shape-renderer/c))
+  (-> adjustment? shape-renderer/c))
 
 (define shape-constructor/c
   (->* () () #:rest (listof adjustment-delta-promise/c) shape/c))
@@ -48,9 +48,9 @@
 ; Shape constructors
 
 (define (make-square . rel-adjs) ; shape constructor
-  (λ ctx-adjs ; shape
+  (λ (ctx-adj) ; shape
     (λ (dc) ; shape-renderer
-      (define adj (apply combine-adjustment (append ctx-adjs rel-adjs)))
+      (define adj (apply combine-adjustment ctx-adj rel-adjs))
       (define geom (adjustment-geometric adj))
       (define a (matrix* geom (col-matrix [-0.5 -0.5 1])))
       (define b (matrix* geom (col-matrix [-0.5  0.5 1])))
@@ -66,9 +66,9 @@
       '())))
 
 (define (make-circle . rel-adjs) ; shape constructor
-  (λ ctx-adjs ; shape
+  (λ (ctx-adj) ; shape
     (λ (dc) ; shape-renderer
-          (define adj (apply combine-adjustment (append ctx-adjs rel-adjs)))
+          (define adj (apply combine-adjustment ctx-adj rel-adjs))
           (define geom (adjustment-geometric adj))
           (define orig (matrix* geom (col-matrix [0 0 1])))
           (define start (matrix* geom (col-matrix [1 0 1])))
@@ -91,28 +91,22 @@
 ; define a shape which is a union of one or more shapes
 (define-syntax-rule (union shape-list)
   (λ rel-adjs  ; shape-constructor
-    (λ ctx-adjs ; shape
-      (define adjs (append ctx-adjs rel-adjs))
+    (λ (ctx-adj) ; shape
       (λ (dc) ; shape-renderer
+        (define adj (apply combine-adjustment ctx-adj rel-adjs))
         ; list of shape-renderers, from list of shapes applied to adjs
-        (map (λ (s) (apply s adjs)) shape-list)))))
+        (map (λ (s) (s adj)) shape-list)))))
 
 ; creates a shape-constructor that randomly selects a shape to render
 ; every time it renders
 ; (-> (listof (cons/c real? shape/c)) shape-constructor/c)
 (define (prob-shape weighted-shapes)
   (λ rel-adjs  ; shape-constructor
-    ; construct shapes
-    ; (define weighted-shapes
-    ;   (map (λ (wsc) (cons (car wsc) (apply (cdr wsc) rel-adjs)))
-    ;        weighted-shape-cons))
-
-    (λ ctx-adjs ; shape
-      (define adjs (append ctx-adjs rel-adjs))
-
+    (λ (ctx-adj) ; shape
       (λ (dc) ; shape-renderer
+        (define adj (apply combine-adjustment ctx-adj rel-adjs))
         (define s (random-choice weighted-shapes))
-        ((apply s adjs) dc)))))
+        ((s adj) dc)))))
 
 ; shortcut for defining a shape union constructor with arguments and bind it to name
 (define-syntax (define-shape stx)

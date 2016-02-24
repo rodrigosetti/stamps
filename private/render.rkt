@@ -6,6 +6,7 @@
          racket/contract
          racket/class
          racket/draw
+         "adjustments.rkt"
          "shape.rkt")
 
 (provide (contract-out [maximum-render-cycles parameter?]
@@ -20,7 +21,7 @@
   (send dc set-pen "black" 0 'transparent)
 
   (define renderers-queue (make-queue))
-  (enqueue! renderers-queue (shape))
+  (enqueue! renderers-queue (shape identity))
 
   (let render-loop ([renderer (dequeue! renderers-queue)]
                     [n 0])

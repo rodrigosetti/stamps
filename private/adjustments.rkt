@@ -10,8 +10,8 @@
          "linalg-utils.rkt")
 
 (provide (contract-out
-          [identity adjustment-delta-promise/c]
-          [combine-adjustment (->* () ()  #:rest (listof adjustment-delta-promise/c) adjustment?)])
+          [identity adjustment?]
+          [combine-adjustment (->* (adjustment?) ()  #:rest (listof adjustment-delta-promise/c) adjustment?)])
          rotate
          scale
          translate
@@ -39,7 +39,12 @@
 (define adjustment-delta-promise/c
   (-> (or/c geometric-delta? color-delta? target-color-delta?)))
 
+; identity adjustment:
+; identity transformation, black, 0-saturation, 0-brightness, 1-alpha
 (define identity
+  (adjustment (identity-matrix 3) 0 0 0 1))
+
+(define identity-delta
   (const (geometric-delta (identity-matrix 3))))
 
 (define-syntax (rotate stx)
@@ -107,7 +112,7 @@
 
 
 ;; adjustments combinators
-(define (combine-adjustment . trans)
+(define (combine-adjustment adj . deltas)
   (foldl (λ (delta adj)
            (define matrix (adjustment-geometric adj))
            (define hue (adjustment-hue adj))
@@ -128,11 +133,9 @@
                                                                    (change-% brightness b tb)
                                                                    (change-% alpha ta))]))
 
-         ; identity adjustment:
-         ; identity transformation, black, 0-saturation, 0-brightness, 1-alpha
-         (adjustment (identity-matrix 3) 0 0 0 1)
+         adj
 
-         (map (λ (t) (t)) trans))) ; apply all promises to get the deltas
+         (map (λ (t) (t)) deltas))) ; apply all promises to get the deltas
 
 ;; ------------------------------------------------------------------------
 
@@ -157,36 +160,43 @@
     (check-= (adjustment-saturation adj1) (adjustment-saturation adj2) epsilon (string-append message " : saturation should be equal"))
     (check-= (adjustment-brightness adj1) (adjustment-brightness adj2) epsilon (string-append message " : brightness should be equal")))
 
+  (check-adjustment-=? (combine-adjustment identity)
+                       identity
+                       "combine adjustment with no arguments")
 
   (test-case "combining with identity is innocuous"
     (define R (random-geometric-delta))
-    (check-equal? (combine-adjustment identity R) (combine-adjustment R) "adjustment identity property (1)")
-    (check-equal? (combine-adjustment R identity) (combine-adjustment R) "adjustment identity property (2)"))
+    (check-equal? (combine-adjustment identity identity-delta R)
+                  (combine-adjustment identity R)
+                  "adjustment identity property (1)")
+    (check-equal? (combine-adjustment identity R identity-delta)
+                  (combine-adjustment identity R)
+                  "adjustment identity property (2)"))
 
   (test-case "invert operations"
     (define x (random-real -10 10))
     (define y (random-real -10 10))
 
-    (check-adjustment-=? (combine-adjustment (translate x y) (translate (- x) (- y)))
-                         (combine-adjustment)
+    (check-adjustment-=? (combine-adjustment identity (translate x y) (translate (- x) (- y)))
+                         identity
                          "translate invert property")
 
-    (check-adjustment-=? (combine-adjustment (rotate x) (rotate (- x)))
-                         (combine-adjustment)
+    (check-adjustment-=? (combine-adjustment identity (rotate x) (rotate (- x)))
+                         identity
                          "rotate invert property")
 
     (define sx (random-real 1 5))
     (define sy (random-real 1 5))
 
-    (check-adjustment-=? (combine-adjustment (scale sx sy) (scale (/ 1 sx) (/ 1 sy)))
-                         (combine-adjustment)
+    (check-adjustment-=? (combine-adjustment identity (scale sx sy) (scale (/ 1 sx) (/ 1 sy)))
+                         identity
                          "scale invert property"))
 
   (test-case "null operations"
 
-    (check-equal? ((translate 0 0)) (identity) "translate zero is identity")
-    (check-equal? ((rotate 0)) (identity) "rotate zero is identity")
-    (check-equal? ((scale 1 1)) (identity) "scale one is identity"))
+    (check-equal? ((translate 0 0)) (identity-delta) "translate zero is identity")
+    (check-equal? ((rotate 0)) (identity-delta) "rotate zero is identity")
+    (check-equal? ((scale 1 1)) (identity-delta) "scale one is identity"))
 
 
   (test-case "change-%"
