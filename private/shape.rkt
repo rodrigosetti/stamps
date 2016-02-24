@@ -8,7 +8,8 @@
          racket/math
          math/matrix
          "adjustments.rkt"
-         "random-utils.rkt")
+         "random-utils.rkt"
+         "color-utils.rkt")
 
 (provide (contract-out [make-square shape-constructor/c]
                        [make-circle shape-constructor/c]
@@ -29,6 +30,21 @@
 (define shape-constructor/c
   (->* () () #:rest (listof adjustment-delta-promise/c) shape/c))
 
+; Transform a real between 0 and 1 unto a byte? (exact between 0 and 255)
+(define (unit-to-byte v)
+  (inexact->exact (round (* 255 v))))
+
+; Helper to apply color adjustments
+(define (apply-color-adjustments dc adj)
+  (define-values (r g b) (hsb->rgb (adjustment-hue adj)
+                                   (adjustment-saturation adj)
+                                   (adjustment-brightness adj)))
+  (define color (make-color (unit-to-byte r)
+                            (unit-to-byte g)
+                            (unit-to-byte b)
+                            (adjustment-alpha adj)))
+  (send dc set-brush color 'solid))
+
 ; Shape constructors
 
 (define (make-square . rel-adjs) ; shape constructor
@@ -44,7 +60,8 @@
                            (cons (matrix-ref b 0 0) (matrix-ref b 1 0))
                            (cons (matrix-ref c 0 0) (matrix-ref c 1 0))
                            (cons (matrix-ref d 0 0) (matrix-ref d 1 0))))
-      ; TODO: apply color adjustment
+
+      (apply-color-adjustments dc adj)
       (send dc draw-polygon points)
       '())))
 
@@ -57,7 +74,7 @@
           (define start (matrix* geom (col-matrix [1 0 1])))
           (define path (new dc-path%))
 
-          ; TODO: apply color adjustment
+          (apply-color-adjustments dc adj)
           (send path move-to
                 (matrix-ref start 0 0)
                 (matrix-ref start 1 0))

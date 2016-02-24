@@ -18,7 +18,6 @@
 ; render-shape: (-> shape/c (is-a?/c dc<%>))
 (define (render-shape shape dc)
   (send dc set-pen "black" 0 'transparent)
-  (send dc set-brush "black" 'solid)
 
   (define renderers-queue (make-queue))
   (enqueue! renderers-queue (shape))

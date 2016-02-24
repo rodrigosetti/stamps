@@ -23,7 +23,8 @@
          adjustment-geometric
          adjustment-hue
          adjustment-saturation
-         adjustment-brightness)
+         adjustment-brightness
+         adjustment-alpha)
 
 ;; adjustment definition
 
@@ -128,8 +129,8 @@
                                                                    (change-% alpha ta))]))
 
          ; identity adjustment:
-         ; identity transformation, black, 0-saturation, 0-brightness, 0-alpha
-         (adjustment (identity-matrix 3) 0 0 0 0)
+         ; identity transformation, black, 0-saturation, 0-brightness, 1-alpha
+         (adjustment (identity-matrix 3) 0 0 0 1)
 
          (map (λ (t) (t)) trans))) ; apply all promises to get the deltas
 
