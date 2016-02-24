@@ -68,23 +68,34 @@
       (send dc draw-polygon points)
       '())))
 
+(define n-circle-points 30)
+(define circle-points (build-matrix 3 n-circle-points
+                                    (λ (i j)
+                                      (define alpha (* j (/ pi (/ n-circle-points 2))))
+                                      (cond
+                                        [(= i 0) (cos alpha)]
+                                        [(= i 1) (sin alpha)]
+                                        [else 1]))))
+
 (define (make-circle . rel-adjs) ; shape constructor
   (λ (ctx-adj) ; shape
     (λ (dc) ; shape-renderer
           (define adj (apply combine-adjustment ctx-adj rel-adjs))
           (define geom (adjustment-geometric adj))
-          (define start (matrix* geom (col-matrix [1 0 1])))
-          (define path (new dc-path%))
+          (define points (matrix* geom circle-points))
 
           (apply-color-adjustments dc adj)
+
+          (define path (new dc-path%))
           (send path move-to
-                (matrix-ref start 0 0)
-                (matrix-ref start 1 0))
-          (for ([a (range -0.1 (* 2 pi) 0.2)])
-            (define p (matrix* geom (col-matrix ((cos a) (sin a) 1))))
-            (send path line-to
-                  (matrix-ref p 0 0)
-                  (matrix-ref p 1 0)))
+                (matrix-ref points 0 0)
+                (matrix-ref points 1 0))
+          (for ([n (range 1 n-circle-points)])
+              (send path line-to
+                    (matrix-ref points 0 n)
+                    (matrix-ref points 1 n)))
+          (send path close)
+
           (send dc draw-path path)
           '())))
 
