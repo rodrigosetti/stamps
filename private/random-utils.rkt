@@ -1,20 +1,22 @@
-#lang racket/base
+#lang typed/racket/base
 
-(require racket/contract)
+(provide random-real
+         random-choice)
 
-(provide (contract-out (random-real (->* (real?) (real?) real?))
-                       (random-choice (-> (listof (cons/c real? any/c)) any/c))))
-
+(: random-real (case-> (-> Real Real ) (-> Real Real Real)))
 (define random-real
   (case-lambda
-    [(min max) (+ (* (- max min) (random)) min)]
-    [(max) (* max (random))]))
+    [(min max)
+     (+ (* (- max min) (random)) min)]
+    [(max)
+     (* max (random))]))
 
 ; select a cdr value from one of the pairs with probability of the weight (car values).
+(: random-choice (All (a) (->  (Listof (Pairof Real a)) a)))
 (define (random-choice weighted-pairs)
-  (define total (apply + (map car weighted-pairs)))
+  (define total (apply + (map (inst car Real Any) weighted-pairs)))
   (define theta (random-real total))
-  (let loop ([x 0]
+  (let loop ([x 0.0]
              [wps weighted-pairs])
     (define wp (car wps))
     (define xx (+ x (car wp)))
