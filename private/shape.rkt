@@ -7,13 +7,11 @@
            racket/math
            math/matrix
            "adjustments.rkt"
-           "random-utils.rkt"
            "color-utils.rkt"
            "common.rkt")
 
   (provide make-square
            make-circle
-           prob-shape
            ShapeConstructor
            ShapeRenderer
            Shape)
@@ -96,26 +94,14 @@
             (send path close)
 
             (send dc draw-path path)
-            '())))
-
-  ; creates a shape-constructor that randomly selects a shape to render
-  ; every time it renders
-  ; (-> (listof (cons/c real? shape/c)) shape-constructor/c)
-  (: prob-shape (-> (Listof (Pairof Real Shape)) ShapeConstructor))
-  (define (prob-shape weighted-shapes)
-    (λ rel-adjs  ; shape-constructor
-      (λ (ctx-adj) ; shape
-        (λ (dc) ; shape-renderer
-          (define adj (apply combine-adjustment ctx-adj rel-adjs))
-          (define s (random-choice weighted-shapes))
-          ((s adj) dc)))))
-)
+            '()))))
 
 (require (for-syntax racket/base)
          'core
          racket/class
          racket/math
          math/matrix
+         "random-utils.rkt"
          "adjustments.rkt")
 
 (provide make-square
@@ -126,7 +112,16 @@
          ShapeRenderer
          Shape)
 
-; Helper to create shape constructors
+
+; creates a shape-constructor that randomly selects a shape to render
+; every time it renders
+(define (prob-shape weighted-shapes)
+  (λ rel-adjs  ; shape-constructor
+    (λ (ctx-adj) ; shape
+      (λ (dc) ; shape-renderer
+        (define adj (apply combine-adjustment ctx-adj rel-adjs))
+        (define s (random-choice weighted-shapes))
+        ((s adj) dc)))))
 
 ; construct a shape which is a union of one or more shapes
 (define-syntax-rule (union shape-list)
