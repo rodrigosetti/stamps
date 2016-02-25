@@ -2,50 +2,157 @@
 
 ; defines the adjustment data structure and combinators
 
-(require (for-syntax racket/base)
-         racket/contract
-         racket/function
-         math/matrix
-         racket/match
-         "linalg-utils.rkt")
+(module core typed/racket/base
 
-(provide (contract-out
-          [identity adjustment?]
-          [combine-adjustment (->* (adjustment?) ()  #:rest (listof adjustment-delta-promise/c) adjustment?)])
+  (require racket/function
+           math/matrix
+           racket/match
+           "linalg-utils.rkt")
+
+  (provide identity
+           combine-adjustment
+           geometric-delta
+           target-color-delta
+           color-delta
+           identity-delta
+           translation-matrix
+           rotation-matrix
+           scaling-matrix
+           change-%
+           AdjustmentDelta
+           (struct-out adjustment))
+
+  ;; adjustment definition
+
+  (struct geometric-delta ([matrix : (Matrix Real)]) #:transparent)
+
+  (struct color-delta ([hue : Real]
+                       [saturation : Real]
+                       [brightness : Real]
+                       [alpha : Real])
+    #:transparent)
+
+  (struct target-color-delta color-delta ([target-hue : Real]
+                                          [target-saturation : Real]
+                                          [target-brightness : Real]
+                                          [target-alpha : Real])
+    #:transparent)
+
+  (define-type AdjustmentDelta (U geometric-delta
+                                  color-delta
+                                  target-color-delta))
+
+  (struct adjustment ([geometric : (Matrix Real)]
+                      [hue : Real]
+                      [saturation : Real]
+                      [brightness : Real]
+                      [alpha : Real])
+    #:transparent)
+
+  ;; adjustment constructors
+
+  #;(define adjustment-delta-promise/c
+    (-> (or/c geometric-delta? color-delta? target-color-delta?)))
+
+  ; identity adjustment:
+  ; identity transformation, black, 0-saturation, 0-brightness, 1-alpha
+  (: identity adjustment)
+  (define identity
+    (adjustment (identity-matrix 3) 0 0 0 1))
+
+  (: identity-delta (-> geometric-delta))
+  (define identity-delta
+    (const (geometric-delta (identity-matrix 3))))
+
+  (: change-to-target (-> Real Real Real Real))
+  (define (change-to-target val % target)
+    (- val (* (abs %) (- val target))))
+
+  ; if target is undefined, return val changed % towards 0 or 1, depending if % is negative or positive (respectively).
+  ; if target is defined, return val changed % towards target if % is positive, otherwise return val changed to 0 or 1,
+  ; whichever is closest.
+  (: change-% (case-> (-> Real Real Real) (-> Real Real Real Real)))
+  (define change-%
+    (case-lambda
+      ([val %]
+       (change-to-target val % (if (< % 0) 0 1)))
+      ([val % target]
+       (change-to-target val % (if (< % 0)
+                                   (if (> 1/2 (- 1 val))
+                                       1
+                                       0)
+                                   target)))))
+
+
+    ;; (: real-target Real)
+    ;; (define real-target (if (< % 0)
+    ;;                         (if (eq? #f target)
+    ;;                             0
+    ;;                             (if (> 1/2 (- 1 val))
+    ;;                                 1
+    ;;                                 0))
+    ;;                         (if (eq? #f target)
+    ;;                             1
+    ;;                             target)))
+
+    ;; (- val (* (abs %) (- val real-target))))
+
+
+  ;; (: eval-adjustment-delta (-> AdjustmentDelta adjustment))
+  ;; (define (eval-adjustment-delta adj-delta)
+  ;;   (adj-delta))
+
+  ;; adjustments combinators
+  (: combine-adjustment (->* (adjustment) () #:rest (-> AdjustmentDelta) adjustment))
+  (define (combine-adjustment adj . deltas)
+    (: folder (-> AdjustmentDelta adjustment adjustment))
+    (define (folder delta adj)
+      (define matrix (adjustment-geometric adj))
+      (define hue (adjustment-hue adj))
+      (define saturation (adjustment-saturation adj))
+      (define brightness (adjustment-brightness adj))
+      (define alpha (adjustment-alpha adj))
+
+      (match delta
+        [(geometric-delta m) (adjustment (matrix* matrix m) hue saturation brightness alpha)]
+        [(color-delta h s b a) (adjustment matrix
+                                           (change-% hue h)
+                                           (change-% saturation s)
+                                           (change-% brightness b)
+                                           (change-% alpha a))]
+        [(target-color-delta h s b a th ts tb ta) (adjustment matrix
+                                                              (change-% hue h th)
+                                                              (change-% saturation s ts)
+                                                              (change-% brightness b tb)
+                                                              (change-% alpha ta))]))
+    (: eval-adj-delta-promise (-> (-> AdjustmentDelta) AdjustmentDelta))
+    (define (eval-adj-delta-promise adj-delta-promise)
+      (adj-delta-promise))
+    (foldl folder
+           adj
+           (map eval-adj-delta-promise deltas))) ; apply all promises to get the deltas
+  )
+
+(require (for-syntax racket/base)
+         'core
+         (only-in racket/function const thunk)
+         racket/contract
+         math/matrix
+         racket/match)
+
+
+(provide identity
+         combine-adjustment
+         AdjustmentDelta
+         (struct-out adjustment)
          rotate
          scale
          translate
          hue
          saturation
          brightness
-         adjustment?
-         adjustment-delta-promise/c
-         adjustment-geometric
-         adjustment-hue
-         adjustment-saturation
-         adjustment-brightness
-         adjustment-alpha)
+         alpha)
 
-;; adjustment definition
-
-(struct geometric-delta (matrix) #:transparent)
-(struct color-delta (hue saturation brightness alpha) #:transparent)
-(struct target-color-delta color-delta (target-hue target-saturation target-brightness target-alpha) #:transparent)
-
-(struct adjustment (geometric hue saturation brightness alpha) #:transparent)
-
-;; adjustment constructors
-
-(define adjustment-delta-promise/c
-  (-> (or/c geometric-delta? color-delta? target-color-delta?)))
-
-; identity adjustment:
-; identity transformation, black, 0-saturation, 0-brightness, 1-alpha
-(define identity
-  (adjustment (identity-matrix 3) 0 0 0 1))
-
-(define identity-delta
-  (const (geometric-delta (identity-matrix 3))))
 
 (define-syntax (rotate stx)
   (syntax-case stx (..)
@@ -59,12 +166,12 @@
     [(_ x y)
      #'(const (geometric-delta (scaling-matrix x y)))]))
 
-  (define-syntax (translate stx)
-    (syntax-case stx (..)
-      [(_ x)
-       #'(thunk (geometric-delta (translation-matrix x x)))]
-      [(_ x y)
-       #'(thunk (geometric-delta (translation-matrix x y)))]))
+(define-syntax (translate stx)
+  (syntax-case stx (..)
+    [(_ x)
+     #'(thunk (geometric-delta (translation-matrix x x)))]
+    [(_ x y)
+     #'(thunk (geometric-delta (translation-matrix x y)))]))
 
 (define-syntax (hue stx)
   (syntax-case stx (..)
@@ -93,49 +200,6 @@
      #'(thunk (color-delta 0 0 0 v))]
     [(_ v t)
      #'(thunk (color-delta 0 0 0 v  0 0 0 t))]))
-
-; if target is undefined, return val changed % towards 0 or 1, depending if % is negative or positive (respectively).
-; if target is defined, return val changed % towards target if % is positive, otherwise return val changed to 0 or 1,
-; whichever is closest.
-(define (change-% val % [target #f])
-  (define real-target (if (< % 0)
-                          (if (eq? #f target)
-                              0
-                              (if (> 1/2 (- 1 val))
-                                  1
-                                  0))
-                          (if (eq? #f target)
-                              1
-                              target)))
-
-  (- val (* (abs %) (- val real-target))))
-
-
-;; adjustments combinators
-(define (combine-adjustment adj . deltas)
-  (foldl (λ (delta adj)
-           (define matrix (adjustment-geometric adj))
-           (define hue (adjustment-hue adj))
-           (define saturation (adjustment-saturation adj))
-           (define brightness (adjustment-brightness adj))
-           (define alpha (adjustment-alpha adj))
-
-           (match delta
-             [(geometric-delta m) (adjustment (matrix* matrix m) hue saturation brightness alpha)]
-             [(color-delta h s b a) (adjustment matrix
-                                                (change-% hue h)
-                                                (change-% saturation s)
-                                                (change-% brightness b)
-                                                (change-% alpha a))]
-             [(target-color-delta h s b a th ts tb ta) (adjustment matrix
-                                                                   (change-% hue h th)
-                                                                   (change-% saturation s ts)
-                                                                   (change-% brightness b tb)
-                                                                   (change-% alpha ta))]))
-
-         adj
-
-         (map (λ (t) (t)) deltas))) ; apply all promises to get the deltas
 
 ;; ------------------------------------------------------------------------
 

@@ -9,8 +9,8 @@
          "adjustments.rkt"
          "shape.rkt")
 
-(provide (contract-out [maximum-render-cycles parameter?]
-                       [render-shape (-> shape/c (is-a?/c dc<%>) any/c)]))
+(provide maximum-render-cycles
+         render-shape)
 
 ; Parameter that controls how many shapes to render
 (define maximum-render-cycles (make-parameter 100))
