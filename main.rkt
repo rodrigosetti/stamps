@@ -1,4 +1,4 @@
-#lang racket/base
+#lang typed/racket/base
 
 (require "private/adjustments.rkt"
          "private/render.rkt"

@@ -1,13 +1,20 @@
-#lang racket/base
+#lang typed/racket/base
 
 ; Rendering tooling
 
-(require data/queue
-         racket/contract
-         racket/class
+(require racket/class
          racket/draw
          "adjustments.rkt"
-         "shape.rkt")
+         "shape.rkt"
+         "common.rkt"
+         typed/racket/unsafe)
+
+(unsafe-require/typed data/queue
+                      [ #:opaque Queue queue?]
+                      [make-queue (-> Queue)]
+                      [enqueue! (-> Queue ShapeRenderer Void)]
+                      [dequeue! (-> Queue ShapeRenderer)]
+                      [queue-empty? (-> Queue Boolean)])
 
 (provide maximum-render-cycles
          render-shape)
@@ -17,6 +24,7 @@
 
 ; Render a shape in a device context
 ; render-shape: (-> shape/c (is-a?/c dc<%>))
+(: render-shape (-> Shape (Instance Dc<%>) Void))
 (define (render-shape shape dc)
   (send dc set-pen "black" 0 'transparent)
   (send dc set-smoothing 'smoothed)
