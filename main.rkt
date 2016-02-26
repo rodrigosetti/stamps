@@ -12,6 +12,7 @@
          saturation
          brightness
          maximum-render-cycles
+         random-integer
          random-real
          random-choice
          define-shape
