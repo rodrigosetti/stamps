@@ -16,11 +16,12 @@
                       [dequeue! (-> Queue ShapeRenderer)]
                       [queue-empty? (-> Queue Boolean)])
 
-(provide maximum-render-cycles
-         render-shape)
+(provide maximum-render-cycles)
+
+(unsafe-provide render-shape)
 
 ; Parameter that controls how many shapes to render
-(define maximum-render-cycles (make-parameter 100))
+(define maximum-render-cycles (make-parameter 1000))
 
 ; Render a shape in a device context
 ; render-shape: (-> shape/c (is-a?/c dc<%>))

@@ -8,13 +8,15 @@
            math/matrix
            "adjustments.rkt"
            "color-utils.rkt"
-           "common.rkt")
+           "common.rkt"
+           typed/racket/unsafe)
 
-  (provide make-square
-           make-circle
-           ShapeConstructor
+  (provide ShapeConstructor
            ShapeRenderer
            Shape)
+
+  (unsafe-provide square
+                  circle)
 
   ; Transform a real between 0 and 1 unto a byte? (exact between 0 and 255)
   (: unit-to-byte (-> Real Byte))
@@ -46,8 +48,8 @@
   (define-type Shape (-> adjustment ShapeRenderer))
   (define-type ShapeConstructor (->* () () #:rest (-> AdjustmentDelta) Shape))
 
-  (: make-square ShapeConstructor)
-  (define (make-square . rel-adjs) ; shape constructor
+  (: square ShapeConstructor)
+  (define (square . rel-adjs) ; shape constructor
     (λ (ctx-adj) ; shape
       (λ (dc) ; shape-renderer
         (define adj (apply combine-adjustment ctx-adj rel-adjs))
@@ -73,8 +75,8 @@
                                           [(= i 1) (sin alpha)]
                                           [else 1]))))
 
-  (: make-circle ShapeConstructor)
-  (define (make-circle . rel-adjs) ; shape constructor
+  (: circle ShapeConstructor)
+  (define (circle . rel-adjs) ; shape constructor
     (λ (ctx-adj) ; shape
       (λ (dc) ; shape-renderer
             (define adj (apply combine-adjustment ctx-adj rel-adjs))
@@ -104,8 +106,8 @@
          "random-utils.rkt"
          "adjustments.rkt")
 
-(provide make-square
-         make-circle
+(provide square
+         circle
          define-shape
          loop-shape
          ShapeConstructor

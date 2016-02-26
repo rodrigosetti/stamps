@@ -84,24 +84,6 @@
                                    target)))))
 
 
-    ;; (: real-target Real)
-    ;; (define real-target (if (< % 0)
-    ;;                         (if (eq? #f target)
-    ;;                             0
-    ;;                             (if (> 1/2 (- 1 val))
-    ;;                                 1
-    ;;                                 0))
-    ;;                         (if (eq? #f target)
-    ;;                             1
-    ;;                             target)))
-
-    ;; (- val (* (abs %) (- val real-target))))
-
-
-  ;; (: eval-adjustment-delta (-> AdjustmentDelta adjustment))
-  ;; (define (eval-adjustment-delta adj-delta)
-  ;;   (adj-delta))
-
   ;; adjustments combinators
   (: combine-adjustment (->* (adjustment) () #:rest (-> AdjustmentDelta) adjustment))
   (define (combine-adjustment adj . deltas)
@@ -140,7 +122,6 @@
          math/matrix
          racket/match)
 
-
 (provide identity
          combine-adjustment
          AdjustmentDelta
@@ -152,7 +133,6 @@
          saturation
          brightness
          alpha)
-
 
 (define-syntax (rotate stx)
   (syntax-case stx (..)
