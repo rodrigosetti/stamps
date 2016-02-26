@@ -1,14 +1,12 @@
 #lang racket/base
 
 (module core typed/racket/base
-  (require typed/racket/draw
-           typed/racket/class
+  (require typed/racket/class
            racket/list
            racket/math
            math/matrix
            "adjustments.rkt"
-           "color-utils.rkt"
-           "common.rkt"
+           "path-record.rkt"
            typed/racket/unsafe)
 
   (provide ShapeConstructor
@@ -18,51 +16,35 @@
   (unsafe-provide square
                   circle)
 
-  ; Transform a real between 0 and 1 unto a byte? (exact between 0 and 255)
-  (: unit-to-byte (-> Real Byte))
-  (define (unit-to-byte v)
-    (define r (exact-round (* 255 v)))
-    (assert (and (<= 0 r) (<= r 255)))
-    r)
+  ; Types
 
-  ; Helper to apply color adjustments
-  (: apply-color-adjustments (-> (Instance Dc<%>) adjustment Void))
-  (define (apply-color-adjustments dc adj)
-    (define-values (r g b) (hsb->rgb (adjustment-hue adj)
-                                    (adjustment-saturation adj)
-                                    (adjustment-brightness adj)))
-    (define color (make-object color%
-                              (unit-to-byte r)
-                              (unit-to-byte g)
-                              (unit-to-byte b)
-                              (adjustment-alpha adj)))
-    (send dc set-brush color 'solid))
-
-  ; Shape constructors
-
-  (define square-points (matrix [[-1/2 -1/2 1/2  1/2]
-                                [-1/2  1/2 1/2 -1/2]
-                                [   1    1   1    1]]))
-
-  (define-type ShapeRenderer (-> (Instance Dc<%>) (Sequenceof ShapeRenderer)))
+  (define-type ShapeRenderer (-> (Instance PathRecord%) (Sequenceof ShapeRenderer)))
   (define-type Shape (-> adjustment ShapeRenderer))
   (define-type ShapeConstructor (->* () () #:rest (-> AdjustmentDelta) Shape))
 
-  (: square ShapeConstructor)
-  (define (square . rel-adjs) ; shape constructor
-    (λ (ctx-adj) ; shape
-      (λ (dc) ; shape-renderer
-        (define adj (apply combine-adjustment ctx-adj rel-adjs))
-        (define geom (adjustment-geometric adj))
-        (define x (matrix* geom square-points))
-        (define points (list (cons (matrix-ref x 0 0) (matrix-ref x 1 0))
-                            (cons (matrix-ref x 0 1) (matrix-ref x 1 1))
-                            (cons (matrix-ref x 0 2) (matrix-ref x 1 2))
-                            (cons (matrix-ref x 0 3) (matrix-ref x 1 3))))
+  ; Shape constructors
 
-        (apply-color-adjustments dc adj)
-        (send dc draw-polygon points)
-        '())))
+  (: make-shape-constructor (-> (Matrix Real) ShapeConstructor))
+  (define (make-shape-constructor base-points)
+    (λ  rel-adjs ; shape constructor
+      (λ (ctx-adj) ; shape
+        (λ (dc) ; shape-renderer
+          (define adj (apply combine-adjustment ctx-adj rel-adjs))
+          (define geom (adjustment-geometric adj))
+          (define points (matrix* geom base-points))
+          (send dc record-path (path points
+                                    (adjustment-hue adj)
+                                    (adjustment-saturation adj)
+                                    (adjustment-brightness adj)
+                                    (adjustment-alpha adj)))
+          '()))))
+
+  (: square-points (Matrix Real))
+  (define square-points (matrix [[-1/2 -1/2 1/2  1/2]
+                                 [-1/2  1/2 1/2 -1/2]
+                                 [   1    1   1    1]]))
+  (: square ShapeConstructor)
+  (define square (make-shape-constructor square-points))
 
   (define n-circle-points 30)
 
@@ -76,27 +58,7 @@
                                           [else 1]))))
 
   (: circle ShapeConstructor)
-  (define (circle . rel-adjs) ; shape constructor
-    (λ (ctx-adj) ; shape
-      (λ (dc) ; shape-renderer
-            (define adj (apply combine-adjustment ctx-adj rel-adjs))
-            (define geom (adjustment-geometric adj))
-            (define points (matrix* geom circle-points))
-
-            (apply-color-adjustments dc adj)
-
-            (define path (new dc-path%))
-            (send path move-to
-                  (matrix-ref points 0 0)
-                  (matrix-ref points 1 0))
-            (for ([n (range 1 n-circle-points)])
-                (send path line-to
-                      (matrix-ref points 0 n)
-                      (matrix-ref points 1 n)))
-            (send path close)
-
-            (send dc draw-path path)
-            '()))))
+  (define circle (make-shape-constructor circle-points)))
 
 (require (for-syntax racket/base)
          'core

@@ -7,6 +7,7 @@
          "adjustments.rkt"
          "shape.rkt"
          "common.rkt"
+         "path-record.rkt"
          typed/racket/unsafe)
 
 (unsafe-require/typed data/queue
@@ -24,18 +25,30 @@
 (define maximum-render-cycles (make-parameter 1000))
 
 ; Render a shape in a device context
-; render-shape: (-> shape/c (is-a?/c dc<%>))
 (: render-shape (-> Shape (Instance Dc<%>) Void))
 (define (render-shape shape dc)
+
+  ; Phase 1: record paths
+  ; ---------------------
+  (define pr (new path-record%))
+  (record-paths shape pr)
+
+  ; Phase 2: replay paths
+  ; ---------------------
   (send dc set-pen "black" 0 'transparent)
   (send dc set-smoothing 'smoothed)
 
+  (send pr replay dc))
+
+; Record shape's paths in a path record
+(: record-paths (-> Shape (Instance PathRecord%) Void))
+(define (record-paths shape pr)
   (define renderers-queue (make-queue))
   (enqueue! renderers-queue (shape identity))
 
   (let render-loop ([renderer (dequeue! renderers-queue)]
                     [n 0])
-    (for ([r (renderer dc)])
+    (for ([r (renderer pr)])
       (enqueue! renderers-queue r))
     (when (and (not (queue-empty? renderers-queue))
                (<= n (maximum-render-cycles)))
