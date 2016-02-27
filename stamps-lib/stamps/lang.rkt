@@ -1,6 +1,7 @@
 #lang racket/base
 
-(require stamps
+(require (for-syntax racket/base)
+         stamps
          racket/draw
          racket/class
          racket/math
@@ -16,7 +17,24 @@
          width
          height
          filename
-         start-shape)
+         start-shape
+         quality
+         deg->rad
+         π
+         translate-x
+         translate-y
+         scale-x
+         scale-y
+         t
+         r
+         s
+         h
+         sat
+         b
+         sx
+         sy
+         x
+         y)
 
 ; Parameters
 
@@ -27,6 +45,35 @@
 (define filetype    (make-parameter 'png))
 (define start-shape (make-parameter #f))
 (define quality     (make-parameter 100))
+
+; Utilities, aliases and syntax
+(define π pi)
+
+(define (deg->rad deg)
+  (* deg (/ π 180)))
+
+(define-syntax-rule (translate-x x)
+  (translate x 0))
+
+(define-syntax-rule (translate-y y)
+  (translate 0 y))
+
+(define-syntax-rule (scale-x x)
+  (scale x 0))
+
+(define-syntax-rule (scale-y y)
+  (scale 0 y))
+
+(define-syntax t   (make-rename-transformer #'translate))
+(define-syntax r   (make-rename-transformer #'rotate))
+(define-syntax s   (make-rename-transformer #'scale))
+(define-syntax h   (make-rename-transformer #'hue))
+(define-syntax sat (make-rename-transformer #'saturation))
+(define-syntax b   (make-rename-transformer #'brightness))
+(define-syntax x   (make-rename-transformer #'translate-x))
+(define-syntax y   (make-rename-transformer #'translate-y))
+(define-syntax sx  (make-rename-transformer #'scale-x))
+(define-syntax sy  (make-rename-transformer #'scale-y))
 
 ; Module wrapper
 
@@ -52,6 +99,7 @@
 
    ; render
    (printf "rendering...")
+   (flush-output)
    (define-values (res cpu real gc)
      (time-apply render-shape
                  (list  ((start-shape)) dc)))
@@ -59,7 +107,9 @@
 
    ; save
    (when (filename)
-    (printf "saving to ~ax~a image ~a (~a)\n" (width) (height) (filename) (filetype))
-    (send bmp save-file (filename) (filetype) (quality)))
+    (printf "saving to ~ax~a image ~a (~a)..." (width) (height) (filename) (filetype))
+    (flush-output)
+    (send bmp save-file (filename) (filetype) (quality))
+    (printf "done\n."))
 
    bmp))

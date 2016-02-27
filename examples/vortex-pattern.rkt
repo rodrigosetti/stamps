@@ -9,15 +9,15 @@
   (square)
 
   ; 2) another square, with half the size and fully bright (white)
-  (square [scale      0.5     ]
-          [brightness 1       ])
+  (square [s 0.5     ]
+          [b 1       ])
 
   ; 3) the shape S (recursively), slightly  rotated, translated
   ; and very slightly smaller and brighter
-  (S      [rotate      .2     ]
-          [translate   .7   .7]
-          [scale       .995   ]
-          [brightness  .002   ]))
+  (S      [r  .2     ]
+          [t  .7   .7]
+          [s  .995   ]
+          [b  .002   ]))
 
 ; background is gray (half bright)
 (background '(0 0 .5))
