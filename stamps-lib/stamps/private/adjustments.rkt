@@ -165,6 +165,7 @@
     [(_ x y)
      #'(const (geometric-delta (scaling-matrix x y)))]))
 
+
 (define-syntax (translate stx)
   (syntax-case stx (..)
     [(_ x)
@@ -184,21 +185,21 @@
     [(_ v)
      #'(thunk (color-delta 0 v 0 0))]
     [(_ v t)
-     #'(thunk (color-delta 0 v 0 0  0 t 0 0))]))
+     #'(thunk (target-color-delta 0 v 0 0  0 t 0 0))]))
 
 (define-syntax (brightness stx)
   (syntax-case stx (..)
     [(_ v)
      #'(thunk (color-delta 0 0 v 0))]
     [(_ v t)
-     #'(thunk (color-delta 0 0 v 0  0 0 t 0))]))
+     #'(thunk (target-color-delta 0 0 v 0  0 0 t 0))]))
 
 (define-syntax (alpha stx)
   (syntax-case stx (..)
     [(_ v)
      #'(thunk (color-delta 0 0 0 v))]
     [(_ v t)
-     #'(thunk (color-delta 0 0 0 v  0 0 0 t))]))
+     #'(thunk (target-color-delta 0 0 0 v  0 0 0 t))]))
 
 ;; ------------------------------------------------------------------------
 
