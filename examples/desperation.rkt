@@ -5,15 +5,13 @@
 
 (define-shape (stem branches)
   ((loop-shape ([i branches])
-                ((branch (random-real -.1 .1))
-                                               [translate .1 0]
+                ((branch (random-real -.1 .1)) [translate .1 0]
                                                [rotate (* i (/ branches (* 2 pi)))]
                                                [scale .7]))))
 
 (define-shape (branch turn)
   [1 => (circle (saturation .4))
-        ((branch turn)
-                       [translate .1 0]
+        ((branch turn) [translate .1 0]
                        [scale .99]
                        [rotate turn]
                        [brightness .01])]

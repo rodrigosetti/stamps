@@ -14,6 +14,7 @@
            Shape)
 
   (unsafe-provide square
+                  triangle
                   circle)
 
   ; Types
@@ -39,12 +40,16 @@
                                     (adjustment-alpha adj)))
           '()))))
 
-  (: square-points (Matrix Real))
-  (define square-points (matrix [[-1/2 -1/2 1/2  1/2]
-                                 [-1/2  1/2 1/2 -1/2]
-                                 [   1    1   1    1]]))
   (: square ShapeConstructor)
-  (define square (make-shape-constructor square-points))
+  (define square (make-shape-constructor (matrix [[-1/2 -1/2 1/2  1/2]
+                                                  [-1/2  1/2 1/2 -1/2]
+                                                  [   1    1   1    1]])))
+
+  (: triangle ShapeConstructor)
+  (define triangle
+    (make-shape-constructor (matrix [[-1/2  1/2    0]
+                                     [(/ 1 (* 2 (sqrt 3))) (/ 1 (* 2 (sqrt 3))) (/ -1 (sqrt 3))]
+                                     [   1    1    1]])))
 
   (define n-circle-points 30)
 
@@ -53,8 +58,8 @@
                                       (λ ([i : Integer] [j : Integer])
                                         (define alpha (* j (/ pi (/ n-circle-points 2))))
                                         (cond
-                                          [(= i 0) (cos alpha)]
-                                          [(= i 1) (sin alpha)]
+                                          [(= i 0) (/ (cos alpha) 2)]
+                                          [(= i 1) (/ (sin alpha) 2)]
                                           [else 1]))))
 
   (: circle ShapeConstructor)
@@ -70,6 +75,7 @@
 
 (provide square
          circle
+         triangle
          define-shape
          loop-shape
          ShapeConstructor

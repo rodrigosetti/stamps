@@ -19,4 +19,5 @@
          loop-shape
          render-shape
          square
+         triangle
          circle)

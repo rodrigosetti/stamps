@@ -20,6 +20,6 @@
 
 (: translation-matrix (-> Real Real (Matrix Real)))
 (define (translation-matrix dx dy)
-  (matrix [[1 0 dx]
-           [0 1 dy]
-           [0 0 1 ]]))
+  (matrix [[1 0 (- dx)]
+           [0 1 (- dy)]
+           [0 0     1 ]]))

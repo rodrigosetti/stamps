@@ -3,9 +3,11 @@
 (require stamps
          racket/draw
          racket/class
+         racket/math
          stamps/private/color-utils)
 
-(provide (except-out (all-from-out stamps)
+(provide (all-from-out racket/math)
+         (except-out (all-from-out stamps)
                      render-shape)
          (except-out (all-from-out racket/base)
                      #%module-begin)
@@ -56,5 +58,8 @@
    (printf " ~a shapes, ~a ms\n" (car res) real)
 
    ; save
-   (printf "saving to ~ax~a image ~a (~a)\n" (width) (height) (filename) (filetype))
-   (send bmp save-file (filename) (filetype) (quality))))
+   (when (filename)
+    (printf "saving to ~ax~a image ~a (~a)\n" (width) (height) (filename) (filetype))
+    (send bmp save-file (filename) (filetype) (quality)))
+
+   bmp))
