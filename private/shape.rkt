@@ -77,7 +77,7 @@
          circle
          triangle
          define-shape
-         loop-shape
+         loop
          ShapeConstructor
          ShapeRenderer
          Shape)
@@ -117,6 +117,6 @@
     [(_ name shape ...)           #'(define name (union (list shape ...)))]))
 
 ; evaluate shape union body in a for loop and then union all together
-(define-syntax-rule (loop-shape (for-clause ...) shape ...)
+(define-syntax-rule (loop (for-clause ...) shape ...)
   (union (for/list (for-clause ...)
            ((union (list shape ...))))))

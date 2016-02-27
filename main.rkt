@@ -8,6 +8,7 @@
 (provide rotate
          scale
          translate
+         flip
          hue
          saturation
          brightness
@@ -16,7 +17,7 @@
          random-real
          random-choice
          define-shape
-         loop-shape
+         loop
          render-shape
          square
          triangle

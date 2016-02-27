@@ -19,8 +19,6 @@
          filename
          start-shape
          quality
-         deg->rad
-         π
          translate-x
          translate-y
          scale-x
@@ -47,11 +45,6 @@
 (define quality     (make-parameter 100))
 
 ; Utilities, aliases and syntax
-(define π pi)
-
-(define (deg->rad deg)
-  (* deg (/ π 180)))
-
 (define-syntax-rule (translate-x x)
   (translate x 0))
 

@@ -7,8 +7,7 @@
   (require racket/function
            math/matrix
            racket/match
-           "common.rkt"
-           "linalg-utils.rkt")
+           "common.rkt")
 
   (provide identity
            combine-adjustment
@@ -16,9 +15,6 @@
            target-color-delta
            color-delta
            identity-delta
-           translation-matrix
-           rotation-matrix
-           scaling-matrix
            change-%
            change-hue
            change-hue-target
@@ -139,7 +135,8 @@
          (only-in racket/function const thunk)
          racket/contract
          math/matrix
-         racket/match)
+         racket/match
+         "linalg-utils.rkt")
 
 (provide identity
          combine-adjustment
@@ -148,15 +145,17 @@
          rotate
          scale
          translate
+         flip
          hue
          saturation
          brightness
          alpha)
 
-(define-syntax (rotate stx)
-  (syntax-case stx (..)
-    [(_ v)
-     #'(const (geometric-delta (rotation-matrix v)))]))
+(define-syntax-rule (rotate angle)
+  (const (geometric-delta (rotation-matrix angle))))
+
+(define-syntax-rule (flip angle)
+  (const (geometric-delta (reflection-matrix angle))))
 
 (define-syntax (scale stx)
   (syntax-case stx (..)
@@ -164,7 +163,6 @@
      #'(thunk (geometric-delta (scaling-matrix x x)))]
     [(_ x y)
      #'(const (geometric-delta (scaling-matrix x y)))]))
-
 
 (define-syntax (translate stx)
   (syntax-case stx (..)
