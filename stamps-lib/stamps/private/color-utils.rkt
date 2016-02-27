@@ -1,6 +1,7 @@
 #lang typed/racket/base
 
-(require "common.rkt")
+(require "common.rkt"
+         racket/math)
 
 (provide hsb->rgb)
 
@@ -34,8 +35,15 @@
 (define (between? n min max)
   (and (<= min n) (< n max)))
 
-(: hsb->rgb (-> Real Real Real (Values Real Real Real)))
-(define (hsb->rgb h s b)
+; Transform a real between 0 and 1 unto a byte? (exact between 0 and 255)
+(: unit-to-byte (-> Real Byte))
+(define (unit-to-byte v)
+  (define r (exact-round (* 255 v)))
+  (assert (and (<= 0 r) (<= r 255)))
+  r)
+
+(: hsb->rgb-unit (-> Real Real Real (Values Real Real Real)))
+(define (hsb->rgb-unit h s b)
   (define C (* b s))
   (define h-prime (/ h 60))
   (define X (* C (- 1 (abs (- (float-modulo h-prime 2) 1)))))
@@ -50,6 +58,13 @@
       [else                   (values 0 0 0)]))
   (define m (- b C))
   (values (+ r1 m) (+ g1 m) (+ b1 m)))
+
+(: hsb->rgb (-> Real Real Real (Values Byte Byte Byte)))
+(define (hsb->rgb h s b)
+  (define-values (red green blue) (hsb->rgb-unit h s b))
+  (values (unit-to-byte red)
+          (unit-to-byte green)
+          (unit-to-byte blue)))
 
 (module+ test
   (require typed/rackunit
@@ -167,7 +182,7 @@
 
     (match-define (vector input-h input-s input-b) (car test-case))
     (match-define (vector expected-r expected-g expected-b) (cdr test-case))
-    (define-values (result-r result-g result-b) (hsb->rgb input-h input-s input-b))
+    (define-values (result-r result-g result-b) (hsb->rgb-unit input-h input-s input-b))
 
     (check-= expected-r result-r epsilon (format "red should match for test case #~a" n))
     (check-= expected-g result-g epsilon (format "green should match for test case #~a" n))

@@ -3,7 +3,6 @@
 (require typed/racket/class
          typed/racket/draw
          math/matrix
-         racket/math
          racket/list
          data/queue
          "color-utils.rkt"
@@ -31,22 +30,11 @@
               [alpha      : Real])
   #:transparent)
 
-; Transform a real between 0 and 1 unto a byte? (exact between 0 and 255)
-(: unit-to-byte (-> Real Byte))
-(define (unit-to-byte v)
-  (define r (exact-round (* 255 v)))
-  (assert (and (<= 0 r) (<= r 255)))
-  r)
-
 ; Helper to apply color adjustments
 (: set-brush-with-solid-color (-> (Instance Dc<%>) Real Real Real Real Void))
 (define (set-brush-with-solid-color dc hue saturation brightness alpha)
   (define-values (r g b) (hsb->rgb hue saturation brightness))
-  (define color (make-object color%
-                             (unit-to-byte r)
-                             (unit-to-byte g)
-                             (unit-to-byte b)
-                             alpha))
+  (define color (make-object color% r g b alpha))
   (send dc set-brush color 'solid))
 
 

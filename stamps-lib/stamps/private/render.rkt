@@ -22,10 +22,11 @@
 (unsafe-provide render-shape)
 
 ; Parameter that controls how many shapes to render
-(define maximum-render-cycles (make-parameter 1000))
+(define maximum-render-cycles (make-parameter 10000))
 
-; Render a shape in a device context
-(: render-shape (-> Shape (Instance Dc<%>) Void))
+; Render a shape in a device context. Returns the number of shapes
+; rendered
+(: render-shape (-> Shape (Instance Dc<%>) Integer))
 (define (render-shape shape dc)
 
   ; Phase 1: record paths
@@ -38,7 +39,9 @@
   (send dc set-pen "black" 0 'transparent)
   (send dc set-smoothing 'smoothed)
 
-  (send pr replay dc))
+  (send pr replay dc)
+
+  (send pr get-paths-count))
 
 ; Record shape's paths in a path record
 (: record-paths (-> Shape (Instance PathRecord%) Void))
