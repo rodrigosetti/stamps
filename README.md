@@ -1,5 +1,5 @@
-shapelang
+stamps
 =========
 
-A language for describing recursive 2D drawings.
+A language for producing art.
 
