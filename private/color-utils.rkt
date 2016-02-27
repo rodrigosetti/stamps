@@ -1,5 +1,7 @@
 #lang typed/racket/base
 
+(require "common.rkt")
+
 (provide hsb->rgb)
 
 ;; Given a color with hue H ∈ [0°, 360°), saturation S ∈ [0, 1],
@@ -31,10 +33,6 @@
 (: between? (-> Real Real Real Boolean))
 (define (between? n min max)
   (and (<= min n) (< n max)))
-
-(: float-modulo (-> Real Real Real))
-(define (float-modulo p q)
-  (- p (* q (truncate (/ p q)))))
 
 (: hsb->rgb (-> Real Real Real (Values Real Real Real)))
 (define (hsb->rgb h s b)

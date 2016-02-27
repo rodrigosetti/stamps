@@ -7,6 +7,7 @@
   (require racket/function
            math/matrix
            racket/match
+           "common.rkt"
            "linalg-utils.rkt")
 
   (provide identity
@@ -19,6 +20,8 @@
            rotation-matrix
            scaling-matrix
            change-%
+           change-hue
+           change-hue-target
            AdjustmentDelta
            (struct-out adjustment))
 
@@ -26,33 +29,30 @@
 
   (struct geometric-delta ([matrix : (Matrix Real)]) #:transparent)
 
-  (struct color-delta ([hue : Real]
+  (struct color-delta ([hue        : Real]
                        [saturation : Real]
                        [brightness : Real]
-                       [alpha : Real])
+                       [alpha      : Real])
     #:transparent)
 
-  (struct target-color-delta color-delta ([target-hue : Real]
+  (struct target-color-delta color-delta ([target-hue        : Real]
                                           [target-saturation : Real]
                                           [target-brightness : Real]
-                                          [target-alpha : Real])
+                                          [target-alpha      : Real])
     #:transparent)
 
   (define-type AdjustmentDelta (U geometric-delta
                                   color-delta
                                   target-color-delta))
 
-  (struct adjustment ([geometric : (Matrix Real)]
-                      [hue : Real]
+  (struct adjustment ([geometric  : (Matrix Real)]
+                      [hue        : Real]
                       [saturation : Real]
                       [brightness : Real]
-                      [alpha : Real])
+                      [alpha      : Real])
     #:transparent)
 
   ;; adjustment constructors
-
-  #;(define adjustment-delta-promise/c
-    (-> (or/c geometric-delta? color-delta? target-color-delta?)))
 
   ; identity adjustment:
   ; identity transformation, black, 0-saturation, 0-brightness, 1-alpha
@@ -84,6 +84,25 @@
                                    target)))))
 
 
+  ; Change hue modulo 360
+  (: change-hue (-> Real Real Real))
+  (define (change-hue current delta)
+    (define new-hue (float-modulo (+ current delta) 360))
+    (+ new-hue
+       (if (< new-hue 0) 360 0)))
+
+  ; Change hue modulo 360 with target
+  (: change-hue-target (-> Real Real Real Real))
+  (define (change-hue-target current % target)
+    (define-values (left right)
+      (if (< target current)
+        (values (- current target)
+                (+ (- 360 current) target))
+        (values (+ (- 360 target) current)
+                (- target current))))
+    (define delta (* % (if (< % 0) left right)))
+    (change-hue current delta))
+
   ;; adjustments combinators
   (: combine-adjustment (->* (adjustment) () #:rest (-> AdjustmentDelta) adjustment))
   (define (combine-adjustment adj . deltas)
@@ -98,12 +117,12 @@
       (match delta
         [(geometric-delta m) (adjustment (matrix* matrix m) hue saturation brightness alpha)]
         [(color-delta h s b a) (adjustment matrix
-                                           (change-% hue h)
+                                           (change-hue hue h)
                                            (change-% saturation s)
                                            (change-% brightness b)
                                            (change-% alpha a))]
         [(target-color-delta h s b a th ts tb ta) (adjustment matrix
-                                                              (change-% hue h th)
+                                                              (change-hue-target hue h th)
                                                               (change-% saturation s ts)
                                                               (change-% brightness b tb)
                                                               (change-% alpha ta))]))
@@ -242,6 +261,28 @@
     (check-equal? ((rotate 0)) (identity-delta) "rotate zero is identity")
     (check-equal? ((scale 1 1)) (identity-delta) "scale one is identity"))
 
+  (test-case "change-hue and change-hue-target"
+
+    (check-= 300 (change-hue 200  100) epsilon)
+    (check-= 140 (change-hue 300  200) epsilon)
+    (check-= 200 (change-hue 300 -100) epsilon)
+    (check-= 260 (change-hue 100 -200) epsilon)
+
+    (check-= 100 (change-hue-target 200 1  100) epsilon)
+    (check-= 200 (change-hue-target 300 1  200) epsilon)
+    (check-= 260 (change-hue-target 300 1 -100) epsilon)
+    (check-= 160 (change-hue-target 100 1 -200) epsilon)
+
+    (check-= 100 (change-hue-target 200 -1  100) epsilon)
+    (check-= 200 (change-hue-target 300 -1  200) epsilon)
+    (check-= 260 (change-hue-target 300 -1 -100) epsilon)
+    (check-= 160 (change-hue-target 100 -1 -200) epsilon)
+
+    (check-= 330 (change-hue-target 200 1/2  100) epsilon)
+    (check-=  70 (change-hue-target 300 1/2  200) epsilon)
+
+    (check-= 150 (change-hue-target 200 -1/2  100) epsilon)
+    (check-= 250 (change-hue-target 300 -1/2  200) epsilon))
 
   (test-case "change-%"
 
