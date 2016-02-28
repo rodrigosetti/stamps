@@ -26,5 +26,4 @@
              [brightness 0.2])])
 
 
-(background '(0 0 1))
 (start-shape tree)

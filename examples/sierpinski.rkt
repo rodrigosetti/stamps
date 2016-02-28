@@ -17,8 +17,5 @@
          [brightness  0.1        ]))
 
 
-; background is white (full bright)
-(background '(0 0 1))
-
 ; make sure "sierp" is the starting shape
 (start-shape sierp)

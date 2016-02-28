@@ -19,5 +19,6 @@
   [ .04 => ((stem   (random-integer 1 4)))]
   [.001 => ])
 
+(background '(0 0 0))
 (maximum-render-cycles 100000)
 (start-shape start)
