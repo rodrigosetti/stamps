@@ -20,5 +20,7 @@
          loop
          render-shape
          square
+         star
          triangle
-         circle)
+         circle
+         pentagon)
