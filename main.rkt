@@ -20,7 +20,7 @@
          loop
          render-shape
          square
-         star
          triangle
          circle
-         pentagon)
+         pentagon
+         hexagon)

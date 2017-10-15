@@ -14,12 +14,10 @@
            Shape)
 
   (unsafe-provide square
-                  star
                   triangle
                   circle
                   pentagon
-                  ;; testing
-                  polygon-matrix)
+                  hexagon)
 
   ; Types
 
@@ -49,12 +47,6 @@
                                                   [-1/2  1/2 1/2 -1/2]
                                                   [   1    1   1    1]])))
 
-  (: star ShapeConstructor)
-  (define star (make-shape-constructor (matrix [[   0  1/6  1/2 1/6 1/4   0 -1/4]
-                                                [-1/2 -1/6 -1/4 1/6 1/2 1/6  1/2]
-                                                [   1    1    1   1   1   1    1]])))
-
-  
   (: triangle ShapeConstructor)
   (define triangle
     (make-shape-constructor (matrix [[-1/2  1/2    0]
@@ -71,13 +63,22 @@
                       [(= i 1) (/ (sin alpha) 2)]
                       [else 1]))))
 
+  (: make-polygon-constructor (-> Integer ShapeConstructor))
+  (define (make-polygon-constructor sides)
+    (make-shape-constructor (polygon-matrix sides)))
+
   (define n-circle-points 30)
 
   (: circle ShapeConstructor)
-  (define circle (make-shape-constructor (polygon-matrix n-circle-points)))
+  (define circle (make-polygon-constructor n-circle-points))
 
   (: pentagon ShapeConstructor)
-  (define pentagon (make-shape-constructor (polygon-matrix 5))))
+  (define pentagon (make-polygon-constructor 5))
+
+  (: hexagon ShapeConstructor)
+  (define hexagon (make-polygon-constructor 6))
+
+  )
 
 (require (for-syntax racket/base)
          'core
@@ -88,10 +89,10 @@
          "adjustments.rkt")
 
 (provide square
-         star
          circle
          triangle
          pentagon
+         hexagon
          define-shape
          loop
          ShapeConstructor
