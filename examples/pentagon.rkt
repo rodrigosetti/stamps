@@ -2,14 +2,47 @@
 
 ;; A grid with nested loops
 
-(define-shape grid
-  ((loop ([j 12])
-         ((loop ([i 12])
-                (pentagon 
-                 [x (* i 0.85)]
-                 [y (* j 0.85)]
-                 [saturation 1         ]
-                 [hue        (* i 30)  ]
-                 [brightness (* j 0.08)]))))))
+(define hue+ 8)
+(define scale* 0.4)
+(define bright+ 0.2)
 
-(start-shape grid)
+(define-shape shape
+  (pentagon 
+   [saturation 1   ]
+   [hue        30  ]
+   [brightness 0.5 ])
+
+  ;; Now draw pentagons on each side
+  (shape
+   [translate 0.5 0    ]
+   [hue       hue+     ]
+   [scale     scale*   ]
+   [brightness bright+ ])
+  (shape
+   [translate 0.15 -0.48]
+   [hue       hue+     ]
+   [scale     scale*   ]
+   [rotate    72       ]
+   [brightness bright+ ])
+  (shape
+   [translate 0.15 0.48]
+   [hue       hue+     ]
+   [scale     scale*   ]
+   [rotate    72       ]
+   [brightness bright+ ])
+  (shape
+   [translate -0.40 0.3]
+   [hue       hue+     ]
+   [scale     scale*   ]
+   [rotate    -72      ]
+   [brightness bright+ ])
+  (shape
+   [translate -0.40 -0.3]
+   [hue       hue+     ]
+   [scale     scale*   ]
+   [rotate    -72      ]
+   [brightness bright+ ])
+  
+)
+
+(start-shape shape)
