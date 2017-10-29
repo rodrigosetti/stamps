@@ -15,7 +15,9 @@
 
   (unsafe-provide square
                   triangle
-                  circle)
+                  circle
+                  pentagon
+                  hexagon)
 
   ; Types
 
@@ -51,19 +53,32 @@
                                      [(/ 1 (* 2 (sqrt 3))) (/ 1 (* 2 (sqrt 3))) (/ -1 (sqrt 3))]
                                      [   1    1    1]])))
 
+  (: polygon-matrix (-> Integer (Matrix Real)))
+  (define (polygon-matrix sides)
+    (build-matrix 3 sides
+                  (λ ([i : Integer] [j : Integer])
+                    (define alpha (* j (/ pi (/ sides 2))))
+                    (cond
+                      [(= i 0) (/ (cos alpha) 2)]
+                      [(= i 1) (/ (sin alpha) 2)]
+                      [else 1]))))
+
+  (: make-polygon-constructor (-> Integer ShapeConstructor))
+  (define (make-polygon-constructor sides)
+    (make-shape-constructor (polygon-matrix sides)))
+
   (define n-circle-points 30)
 
-  (: circle-points (Matrix Real))
-  (define circle-points (build-matrix 3 n-circle-points
-                                      (λ ([i : Integer] [j : Integer])
-                                        (define alpha (* j (/ pi (/ n-circle-points 2))))
-                                        (cond
-                                          [(= i 0) (/ (cos alpha) 2)]
-                                          [(= i 1) (/ (sin alpha) 2)]
-                                          [else 1]))))
-
   (: circle ShapeConstructor)
-  (define circle (make-shape-constructor circle-points)))
+  (define circle (make-polygon-constructor n-circle-points))
+
+  (: pentagon ShapeConstructor)
+  (define pentagon (make-polygon-constructor 5))
+
+  (: hexagon ShapeConstructor)
+  (define hexagon (make-polygon-constructor 6))
+
+  )
 
 (require (for-syntax racket/base)
          'core
@@ -76,6 +91,8 @@
 (provide square
          circle
          triangle
+         pentagon
+         hexagon
          define-shape
          loop
          ShapeConstructor

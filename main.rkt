@@ -21,4 +21,6 @@
          render-shape
          square
          triangle
-         circle)
+         circle
+         pentagon
+         hexagon)
