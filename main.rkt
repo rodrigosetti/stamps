@@ -12,6 +12,7 @@
          hue
          saturation
          brightness
+         alpha
          maximum-render-cycles
          random-integer
          random-real
