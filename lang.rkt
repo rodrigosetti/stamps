@@ -29,6 +29,7 @@
          h
          sat
          b
+         a
          sx
          sy
          x
@@ -63,6 +64,7 @@
 (define-syntax h   (make-rename-transformer #'hue))
 (define-syntax sat (make-rename-transformer #'saturation))
 (define-syntax b   (make-rename-transformer #'brightness))
+(define-syntax a   (make-rename-transformer #'alpha))
 (define-syntax x   (make-rename-transformer #'translate-x))
 (define-syntax y   (make-rename-transformer #'translate-y))
 (define-syntax sx  (make-rename-transformer #'scale-x))
