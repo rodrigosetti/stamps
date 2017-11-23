@@ -71,14 +71,13 @@
     (: min-y Real)
     (: max-x Real)
     (: max-y Real)
-    (define min-x -10)
-    (define min-y -10)
-    (define max-x 10)
-    (define max-y 10)
+    (define min-x 0)
+    (define min-y 0)
+    (define max-x 0)
+    (define max-y 0)
 
     (define paths-queue (make-queue))
 
-    (: get-bounding (-> (values Real Real Real Real)))
     (define/public (get-bounding) (values min-x min-y max-x max-y))
 
     (define/public (get-paths-count) (queue-length paths-queue))
@@ -143,6 +142,15 @@
 
     (: record-path (-> path Void))
     (define/public (record-path P)
+
+      (define-values (small-x small-y big-x big-y)
+        (path-bounding P))
+
+      (when (> big-x max-x) (set! max-x big-x))
+      (when (> big-y max-y) (set! max-y big-y))
+      (when (< small-x min-x) (set! min-x small-x))
+      (when (< small-y min-y) (set! min-y small-y))
+
       (enqueue! paths-queue P))
 
     ))
