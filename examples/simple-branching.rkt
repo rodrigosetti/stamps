@@ -15,5 +15,5 @@
      (row [rotate 120])]
 )
 
-(maximum-render-cycles 100000) 
+(maximum-render-cycles 50000) 
 (start-shape row)
