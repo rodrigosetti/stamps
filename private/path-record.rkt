@@ -143,28 +143,17 @@
     (: record-path (-> path Void))
     (define/public (record-path P)
 
-      (define mat (path-points P))
-      (define N (matrix-num-cols mat))
+      (define-values (small-x small-y big-x big-y)
+        (path-bounding P))
 
-      (: xs (Listof Real))
-      (define xs (for/list ([i (range N)])
-                   (matrix-ref mat 0 i)))
+      (when (> big-x max-x) (set! max-x big-x))
+      (when (> big-y max-y) (set! max-y big-y))
+      (when (< small-x min-x) (set! min-x small-x))
+      (when (< small-y min-y) (set! min-y small-y))
 
-      (: ys (Listof Real))
-      (define ys (for/list ([i (range N)])
-                   (matrix-ref mat 1 i)))
+      (enqueue! paths-queue P))
 
-      (define big-x (apply max xs))
-      (define small-x (apply min xs))
-      (define big-y (apply max ys))
-      (define small-y (apply min ys))
-
-      (when (or (queue-empty? paths-queue) (> big-x max-x)) (set! max-x big-x))
-      (when (or (queue-empty? paths-queue) (> big-y max-y)) (set! max-y big-y))
-      (when (or (queue-empty? paths-queue) (< small-x min-x)) (set! min-x small-x))
-      (when (or (queue-empty? paths-queue) (< small-y min-y)) (set! min-y small-y))
-
-      (enqueue! paths-queue P))))
+    ))
 
 
 (module+ test
