@@ -1,9 +1,7 @@
 #lang s-exp stamps/lang
 
-; Performance testing - no probability, just loops
-
 (define-shape row
-  ((loop ([i 10])
+  ((loop ([i 8])
          (circle [saturation 1  ]
                  [hue        0  ]
                  [brightness 0.5]
@@ -11,11 +9,14 @@
                             (* i (random-real 0.98 1))])))
   (row [rotate    60 ]
        [translate 5 5]
-       [scale     0.8])
+       [scale     0.9])
   (row [rotate    120]
        [translate 5 5]
-       [scale     0.8])
+       [scale     0.9])
 )
 
-(maximum-render-cycles 100000)
-(start-shape row)
+(define-shape init
+  (row [alpha -0.7]))
+
+(maximum-render-cycles 50000)
+(start-shape init)
