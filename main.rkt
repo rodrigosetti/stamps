@@ -9,6 +9,7 @@
          scale
          translate
          flip
+         shear
          hue
          saturation
          brightness

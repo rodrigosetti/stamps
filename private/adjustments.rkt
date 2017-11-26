@@ -151,6 +151,7 @@
          scale
          translate
          flip
+         shear
          hue
          saturation
          brightness
@@ -175,6 +176,13 @@
      #'(thunk (geometric-delta (translation-matrix x x)))]
     [(_ x y)
      #'(thunk (geometric-delta (translation-matrix x y)))]))
+
+(define-syntax (shear stx)
+  (syntax-case stx (..)
+    [(_ x)
+     #'(thunk (geometric-delta (shear-matrix x x)))]
+    [(_ x y)
+     #'(thunk (geometric-delta (shear-matrix x y)))]))
 
 (define-syntax (hue stx)
   (syntax-case stx (..)
@@ -337,6 +345,16 @@
              (combine-adjustment identity
                                  (saturation 1)
                                  (saturation -0.5)))
-            epsilon)
+            epsilon))
 
-  ))
+  (test-case
+   "shear-adjustment"
+
+   (check-equal?
+    (adjustment-geometric
+     (combine-adjustment identity (shear 2 3)))
+    (matrix [[1 2 0]
+             [3 1 0]
+             [0 0 1]])))
+
+  )
