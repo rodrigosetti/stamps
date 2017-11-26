@@ -31,11 +31,15 @@
 
   ; Phase 1: record paths
   ; ---------------------
+  (printf "recording paths...")
+  (flush-output)
   (define pr (new path-record%))
   (record-paths shape pr)
 
   ; Phase 2: replay paths
   ; ---------------------
+  (printf "drawing paths...")
+  (flush-output)
   (send dc set-pen "black" 0 'transparent)
   (send dc set-smoothing 'smoothed)
 
