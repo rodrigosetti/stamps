@@ -17,9 +17,9 @@ Learn
 
 Some places to start:
 
-* some [examples][https://github.com/ericclack/racket-stamps/tree/master/examples]
-* the beginnings of a [tutorial][https://github.com/ericclack/racket-stamps/tree/master/tutorial]
-* [artwork][https://github.com/ericclack/racket-stamps/tree/master/examples/context-free] translated from the [Context Free Gallery][https://contextfreeart.org/gallery2/]
+* some [examples](examples)
+* the beginnings of a [tutorial](tutorial)
+* [artwork](examples/context-free) translated from the [Context Free Gallery](https://contextfreeart.org/gallery2/)
 
 
 Examples
