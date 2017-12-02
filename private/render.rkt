@@ -4,6 +4,7 @@
 
 (require racket/class
          racket/draw
+         racket/list
          "adjustments.rkt"
          "shape.rkt"
          "common.rkt"
@@ -17,30 +18,41 @@
                       [dequeue! (-> Queue ShapeRenderer)]
                       [queue-empty? (-> Queue Boolean)])
 
-(provide maximum-render-cycles)
+(provide maximum-render-cycles
+         bounding)
 
 (unsafe-provide render-shape)
 
 ; Parameter that controls how many shapes to render
 (define maximum-render-cycles (make-parameter 10000))
 
+; The user can set the bounding, bypassing bounding calculation based
+; on shape
+(define bounding (make-parameter (ann '() (Listof Real))))
+
 ; Render a shape in a device context. Returns the number of shapes
 ; rendered
 (: render-shape (-> Shape (Instance Dc<%>) Integer))
 (define (render-shape shape dc)
 
+  (define pr (new path-record%))
+  
+  (when (not (empty? (bounding)))
+    (let-values ([(x1 y1 x2 y2) (apply values (bounding))])
+      (send pr set-bounding x1 y1 x2 y2)))
+
   ; Phase 1: record paths
   ; ---------------------
   (printf "recording paths...")
   (flush-output)
-  (define pr (new path-record%))
   (record-paths shape pr)
 
   ; Phase 2: replay paths
   ; ---------------------
   (define-values (min-x min-y max-x max-y) (send pr get-bounding))
-  (printf "drawing paths in bounding box ~a..." (map (λ ([x : Real]) (real->decimal-string x 2))
-                                          (list min-x min-y max-x max-y)))
+  (printf "drawing paths in bounding box ~a..."
+          (map (λ ([x : Real]) (real->decimal-string x 2))
+               (list min-x min-y max-x max-y)))
   (flush-output)
   (send dc set-pen "black" 0 'transparent)
   (send dc set-smoothing 'smoothed)

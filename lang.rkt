@@ -19,6 +19,7 @@
          filename
          start-shape
          quality
+         
          translate-x
          translate-y
          scale-x

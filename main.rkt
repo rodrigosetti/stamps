@@ -15,6 +15,7 @@
          brightness
          alpha
          maximum-render-cycles
+         bounding
          random-integer
          random-real
          random-choice
