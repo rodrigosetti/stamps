@@ -38,7 +38,9 @@
 
   ; Phase 2: replay paths
   ; ---------------------
-  (printf "drawing paths...")
+  (define-values (min-x min-y max-x max-y) (send pr get-bounding))
+  (printf "drawing paths in bounding box ~a..." (map (λ ([x : Real]) (real->decimal-string x 2))
+                                          (list min-x min-y max-x max-y)))
   (flush-output)
   (send dc set-pen "black" 0 'transparent)
   (send dc set-smoothing 'smoothed)
