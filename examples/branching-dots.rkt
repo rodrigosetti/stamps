@@ -19,4 +19,5 @@
   (row [alpha -0.7]))
 
 (maximum-render-cycles 50000)
+(bounding '(-5 -10 15 10))
 (start-shape init)
