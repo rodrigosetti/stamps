@@ -38,8 +38,11 @@
   (define pr (new path-record%))
   
   (when (not (empty? (bounding)))
-    (let-values ([(x1 y1 x2 y2) (apply values (bounding))])
-      (send pr set-bounding x1 y1 x2 y2)))
+    (send pr set-bounding
+          (list-ref (bounding) 0)
+          (list-ref (bounding) 1)
+          (list-ref (bounding) 2)
+          (list-ref (bounding) 3)))
 
   ; Phase 1: record paths
   ; ---------------------
