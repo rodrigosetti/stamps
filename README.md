@@ -4,6 +4,24 @@ stamps
 A language for producing art implemented on [Racket](http://racket-lang.org), inspired by
 [Context Free](http://contextfreeart.org).
 
+Install
+-------
+
+Check out this repository, or download the ZIP file and extract. Start up Racket and
+open the Package Manager, using the 'Do What I Mean' tab set the Package Source to
+the directory you've just checked out and click Install.
+
+
+Learn
+-----
+
+Some places to start:
+
+* some [examples][https://github.com/ericclack/racket-stamps/tree/master/examples]
+* the beginnings of a [tutorial][https://github.com/ericclack/racket-stamps/tree/master/tutorial]
+* [artwork][https://github.com/ericclack/racket-stamps/tree/master/examples/context-free] translated from the [Context Free Gallery][https://contextfreeart.org/gallery2/]
+
+
 Examples
 --------
 
