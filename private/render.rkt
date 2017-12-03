@@ -5,6 +5,7 @@
 (require racket/class
          racket/draw
          racket/list
+         racket/match
          "adjustments.rkt"
          "shape.rkt"
          "common.rkt"
@@ -38,12 +39,9 @@
   (define pr (new path-record%))
   
   (when (not (empty? (bounding)))
-    (send pr set-bounding
-          (list-ref (bounding) 0)
-          (list-ref (bounding) 1)
-          (list-ref (bounding) 2)
-          (list-ref (bounding) 3)))
-
+    (match-let ([(list x1 y1 x2 y2) (bounding)])
+      (send pr set-bounding x1 y1 x2 y2)))
+  
   ; Phase 1: record paths
   ; ---------------------
   (printf "recording paths...")
