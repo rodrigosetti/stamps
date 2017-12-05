@@ -30,6 +30,25 @@
               [alpha      : Real])
   #:transparent)
 
+(: path-bounding (-> path (values Real Real Real Real)))
+(define (path-bounding P)
+
+  (define mat (path-points P))
+  (define N (matrix-num-cols mat))
+
+  (: xs (Listof Real))
+  (define xs (for/list ([i (range N)])
+                       (matrix-ref mat 0 i)))
+
+  (: ys (Listof Real))
+  (define ys (for/list ([i (range N)])
+                       (matrix-ref mat 1 i)))
+
+  (values (apply min xs)
+          (apply min ys)
+          (apply max xs)
+          (apply max ys)))
+
 ; Helper to apply color adjustments
 (: set-brush-with-solid-color (-> (Instance Dc<%>) Real Real Real Real Void))
 (define (set-brush-with-solid-color dc hue saturation brightness alpha)
@@ -40,6 +59,7 @@
 
 (define-type PathRecord% (Class [get-bounding (-> (Values Real Real Real Real))]
                                 [get-paths-count (-> Integer)]
+                                [set-bounding (-> Real Real Real Real Void)]
                                 [replay (-> (Instance Dc<%>) Void)]
                                 [record-path (-> path Void)]))
 
@@ -57,11 +77,22 @@
     (define max-x 0)
     (define max-y 0)
 
+    (: calc-bounding? Boolean)
+    (define calc-bounding? #t)
+
     (define paths-queue (make-queue))
 
     (define/public (get-bounding) (values min-x min-y max-x max-y))
 
     (define/public (get-paths-count) (queue-length paths-queue))
+
+    (: set-bounding (-> Real Real Real Real Void))
+    (define/public (set-bounding x1 y1 x2 y2)
+      (set! min-x x1)
+      (set! min-y y1)
+      (set! max-x x2)
+      (set! max-y y2)
+      (set! calc-bounding? #f))
 
     (: replay (-> (Instance Dc<%>) Void))
     (define/public (replay dc)
@@ -124,69 +155,64 @@
     (: record-path (-> path Void))
     (define/public (record-path P)
 
-      (define mat (path-points P))
-      (define N (matrix-num-cols mat))
+      (when calc-bounding?
+        (define-values (small-x small-y big-x big-y)
+          (path-bounding P))
 
-      (: xs (Listof Real))
-      (define xs (for/list ([i (range N)])
-                   (matrix-ref mat 0 i)))
+        (when (> big-x max-x) (set! max-x big-x))
+        (when (> big-y max-y) (set! max-y big-y))
+        (when (< small-x min-x) (set! min-x small-x))
+        (when (< small-y min-y) (set! min-y small-y)))
+      
+      (enqueue! paths-queue P))
 
-      (: ys (Listof Real))
-      (define ys (for/list ([i (range N)])
-                   (matrix-ref mat 1 i)))
-
-      (define big-x (apply max xs))
-      (define small-x (apply min xs))
-      (define big-y (apply max ys))
-      (define small-y (apply min ys))
-
-      (when (or (queue-empty? paths-queue) (> big-x max-x)) (set! max-x big-x))
-      (when (or (queue-empty? paths-queue) (> big-y max-y)) (set! max-y big-y))
-      (when (or (queue-empty? paths-queue) (< small-x min-x)) (set! min-x small-x))
-      (when (or (queue-empty? paths-queue) (< small-y min-y)) (set! min-y small-y))
-
-      (enqueue! paths-queue P))))
+    ))
 
 
 (module+ test
   (require typed/rackunit)
 
-  (define pr (new path-record%))
+  (test-case "path-record tests"
 
+             (define pr (new path-record%))
+             (define a-path (path (matrix [[ 0 -1  2]
+                                           [-2  7  1]
+                                           [ 1  1  1]])
+                                  0 0 0 0))
 
-  (check-eq? 0 (send pr get-paths-count))
+             (check-eq? 0 (send pr get-paths-count))
 
-  (send pr record-path (path (matrix [[ 0 -1  2]
-                                      [-2  7  1]
-                                      [ 1  1  1]])
-                             0
-                             0
-                             0
-                             0))
+             (send pr record-path a-path)
+             (check-eq? 1 (send pr get-paths-count))
+             
+             (define-values (min-x min-y max-x max-y) (send pr get-bounding))
+             (check-eq? -1 min-x)
+             (check-eq? -2 min-y)
+             (check-eq?  2 max-x)
+             (check-eq?  7 max-y)
+             
+             (send pr record-path (path (matrix [[ 1  2  3]
+                                                 [ 0 -4  1]
+                                                 [ 1  1  1]])
+                                        0 0 0 0))
+             (check-eq? 2 (send pr get-paths-count))
+             
+             (set!-values (min-x min-y max-x max-y) (send pr get-bounding))
+             (check-eq? -1 min-x)
+             (check-eq? -4 min-y)
+             (check-eq?  3 max-x)
+             (check-eq?  7 max-y))
 
-  (check-eq? 1 (send pr get-paths-count))
+  (test-case "path function tests"
 
-  (define-values (min-x min-y max-x max-y) (send pr get-bounding))
+             (define a-path (path (matrix [[ 0 -1  2 -10]
+                                           [-7  7  1  10]
+                                           [ 1  1  1  1 ]])
+                                  0 0 0 0))
+             (define-values (min-x min-y max-x max-y) (path-bounding a-path))
+             (check-eq? -10 min-x)
+             (check-eq? -7 min-y)
+             (check-eq?  2 max-x)
+             (check-eq?  10 max-y))
 
-  (check-eq? -1 min-x)
-  (check-eq? -2 min-y)
-  (check-eq?  2 max-x)
-  (check-eq?  7 max-y)
-
-  (send pr record-path (path (matrix [[ 1  2  3]
-                                      [ 0 -4  1]
-                                      [ 1  1  1]])
-                             0
-                             0
-                             0
-                             0))
-  (check-eq? 2 (send pr get-paths-count))
-
-  (set!-values (min-x min-y max-x max-y) (send pr get-bounding))
-
-  (check-eq? -1 min-x)
-  (check-eq? -4 min-y)
-  (check-eq?  3 max-x)
-  (check-eq?  7 max-y)
-
-  )
+)

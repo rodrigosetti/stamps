@@ -19,6 +19,7 @@
          filename
          start-shape
          quality
+         
          translate-x
          translate-y
          scale-x
@@ -33,7 +34,9 @@
          sx
          sy
          x
-         y)
+         y
+         ri
+         rr)
 
 ; Parameters
 
@@ -69,6 +72,8 @@
 (define-syntax y   (make-rename-transformer #'translate-y))
 (define-syntax sx  (make-rename-transformer #'scale-x))
 (define-syntax sy  (make-rename-transformer #'scale-y))
+(define-syntax ri  (make-rename-transformer #'random-integer))
+(define-syntax rr  (make-rename-transformer #'random-real))
 
 ; Module wrapper
 

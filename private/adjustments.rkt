@@ -15,6 +15,7 @@
            target-color-delta
            color-delta
            identity-delta
+           change-to-target ; debug
            change-%
            change-hue
            change-hue-target
@@ -62,7 +63,10 @@
 
   (: change-to-target (-> Real Real Real Real))
   (define (change-to-target val % target)
-    (- val (* (abs %) (- val target))))
+    ; change val by % towards target
+    ; % is always treated as positive
+    (- val (* (abs %)
+              (- val target))))
 
   ; if target is undefined, return val changed % towards 0 or 1, depending if % is negative or positive (respectively).
   ; if target is defined, return val changed % towards target if % is positive, otherwise return val changed to 0 or 1,
@@ -125,6 +129,7 @@
     (: eval-adj-delta-promise (-> (-> AdjustmentDelta) AdjustmentDelta))
     (define (eval-adj-delta-promise adj-delta-promise)
       (adj-delta-promise))
+
     (foldl folder
            adj
            (map eval-adj-delta-promise deltas))) ; apply all promises to get the deltas
@@ -146,6 +151,7 @@
          scale
          translate
          flip
+         shear
          hue
          saturation
          brightness
@@ -170,6 +176,13 @@
      #'(thunk (geometric-delta (translation-matrix x x)))]
     [(_ x y)
      #'(thunk (geometric-delta (translation-matrix x y)))]))
+
+(define-syntax (shear stx)
+  (syntax-case stx (..)
+    [(_ x)
+     #'(thunk (geometric-delta (shear-matrix x x)))]
+    [(_ x y)
+     #'(thunk (geometric-delta (shear-matrix x y)))]))
 
 (define-syntax (hue stx)
   (syntax-case stx (..)
@@ -206,7 +219,6 @@
   (require rackunit
            "random-utils.rkt")
 
-
   (define (random-geometric-delta)
     (const (geometric-delta (matrix [[(random-real -1 1) (random-real -1 1) (random-real -1 1)]
                                      [(random-real 0 1) (random-real -1 1) (random-real -1 1)]
@@ -226,6 +238,7 @@
                        identity
                        "combine adjustment with no arguments")
 
+  
   (test-case "combining with identity is innocuous"
     (define R (random-geometric-delta))
     (check-equal? (combine-adjustment identity identity-delta R)
@@ -234,6 +247,7 @@
     (check-equal? (combine-adjustment identity R identity-delta)
                   (combine-adjustment identity R)
                   "adjustment identity property (2)"))
+
 
   (test-case "invert operations"
     (define x (random-real -10 10))
@@ -254,11 +268,13 @@
                          identity
                          "scale invert property"))
 
+
   (test-case "null operations"
 
     (check-equal? ((translate 0 0)) (identity-delta) "translate zero is identity")
     (check-equal? ((rotate 0)) (identity-delta) "rotate zero is identity")
     (check-equal? ((scale 1 1)) (identity-delta) "scale one is identity"))
+
 
   (test-case "change-hue and change-hue-target"
 
@@ -283,6 +299,7 @@
     (check-= 150 (change-hue-target 200 -1/2  100) epsilon)
     (check-= 250 (change-hue-target 300 -1/2  200) epsilon))
 
+
   (test-case "change-%"
 
     (check-= 0.5 (change-% 1 -0.5) epsilon)
@@ -298,4 +315,46 @@
     (check-= 0.6 (change-% 0.4 0.5 0.8) epsilon)
     (check-= 0.2 (change-% 0.4 -0.5 0.8) epsilon)
     (check-= 1 (change-% 1 -0.5 20) epsilon)
-    (check-= 0 (change-% 0 -0.5 20) epsilon)))
+    (check-= 0 (change-% 0 -0.5 20) epsilon))
+
+
+  (test-case
+   "combine-adjustment"
+
+   ; Simple cases - starting with sat=0 and single adj
+   (check-= 0.5
+            (adjustment-saturation
+             (combine-adjustment identity (saturation 0.5)))
+            epsilon)
+   (check-= 1
+            (adjustment-saturation
+             (combine-adjustment identity (saturation 1)))
+            epsilon)
+
+  ; Double adjustments - increasing
+  (check-= 0.75
+            (adjustment-saturation
+             (combine-adjustment identity
+                                 (saturation 0.5)
+                                 (saturation 0.5)))
+            epsilon)
+
+  ; Double adjustments - descreasing
+  (check-= 0.5
+            (adjustment-saturation
+             (combine-adjustment identity
+                                 (saturation 1)
+                                 (saturation -0.5)))
+            epsilon))
+
+  (test-case
+   "shear-adjustment"
+
+   (check-equal?
+    (adjustment-geometric
+     (combine-adjustment identity (shear 2 3)))
+    (matrix [[1 2 0]
+             [3 1 0]
+             [0 0 1]])))
+
+  )
