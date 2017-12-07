@@ -1,7 +1,7 @@
 #lang s-exp stamps/lang
 
-; racket-stamps Tutorial
-; 1 - Shapes
+; Stamps Tutorial
+; Shapes
 
 ; Your art is composed from some shape primitives:
 ; circle, square, triangle, pentagon, hexagon.

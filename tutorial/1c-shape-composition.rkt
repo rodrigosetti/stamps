@@ -1,7 +1,7 @@
 #lang s-exp stamps/lang
 
-; racket-stamps Tutorial
-; 1b - Shapes - composition
+; Stamps Tutorial
+; Shapes - composition
 
 ; Any shape you define with `(define-shape` is just like any other
 ; shape, you can compose these too, including recursively,

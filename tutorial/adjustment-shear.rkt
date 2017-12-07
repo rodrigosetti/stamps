@@ -1,6 +1,7 @@
 #lang s-exp stamps/lang
 
-; Shear example 
+; Stamps Tutorial
+; Adjustment - Shear 
 
 (define-shape sheared-square
   (square)
