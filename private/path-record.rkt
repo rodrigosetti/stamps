@@ -59,6 +59,7 @@
 
 (define-type PathRecord% (Class [get-bounding (-> (Values Real Real Real Real))]
                                 [get-paths-count (-> Integer)]
+                                [set-bounding (-> Real Real Real Real Void)]
                                 [replay (-> (Instance Dc<%>) Void)]
                                 [record-path (-> path Void)]))
 
@@ -76,11 +77,22 @@
     (define max-x 0)
     (define max-y 0)
 
+    (: calc-bounding? Boolean)
+    (define calc-bounding? #t)
+
     (define paths-queue (make-queue))
 
     (define/public (get-bounding) (values min-x min-y max-x max-y))
 
     (define/public (get-paths-count) (queue-length paths-queue))
+
+    (: set-bounding (-> Real Real Real Real Void))
+    (define/public (set-bounding x1 y1 x2 y2)
+      (set! min-x x1)
+      (set! min-y y1)
+      (set! max-x x2)
+      (set! max-y y2)
+      (set! calc-bounding? #f))
 
     (: replay (-> (Instance Dc<%>) Void))
     (define/public (replay dc)
@@ -143,14 +155,15 @@
     (: record-path (-> path Void))
     (define/public (record-path P)
 
-      (define-values (small-x small-y big-x big-y)
-        (path-bounding P))
+      (when calc-bounding?
+        (define-values (small-x small-y big-x big-y)
+          (path-bounding P))
 
-      (when (> big-x max-x) (set! max-x big-x))
-      (when (> big-y max-y) (set! max-y big-y))
-      (when (< small-x min-x) (set! min-x small-x))
-      (when (< small-y min-y) (set! min-y small-y))
-
+        (when (> big-x max-x) (set! max-x big-x))
+        (when (> big-y max-y) (set! max-y big-y))
+        (when (< small-x min-x) (set! min-x small-x))
+        (when (< small-y min-y) (set! min-y small-y)))
+      
       (enqueue! paths-queue P))
 
     ))

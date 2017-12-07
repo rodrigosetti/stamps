@@ -19,7 +19,7 @@
              [hue        0] ; red
              [brightness 1]))
 
-; Only draw a few render cycles, this gives 4 shapes
+; Only draw a few render cycles, this gives 5 shapes
 (maximum-render-cycles 10)
 
 (start-shape outer)
