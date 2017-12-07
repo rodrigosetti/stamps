@@ -1,12 +1,12 @@
 #lang s-exp stamps/lang
 
-; racket-stamps Tutorial
-; bounding
+; Stamps Tutorial
+; Bounding
 
-; By default stamps will calculate the atwork bounding so that all of the
+; By default Stamps will calculate the atwork bounding so that all of the
 ; generated shapes are visible.
 
-; When you render, stamps will output you the bounding box calculated.
+; When you render, Stamps will output you the bounding box calculated.
 ; To see this, run the following...
 
 (define-shape scene

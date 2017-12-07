@@ -1,7 +1,7 @@
 #lang s-exp stamps/lang
 
-; racket-stamps Tutorial
-; 2 - Adjustment - saturation
+; Stamps Tutorial
+; Adjustment - Saturation
 
 ; Saturation is a value between 0 (no color) to 1 (full color)
 ; When the adjustment is a single value it represents a percentage

@@ -1,7 +1,7 @@
 #lang s-exp stamps/lang
 
-; racket-stamps Tutorial
-; 1b - Shapes - composition
+; Stamps Tutorial
+; Shapes - composition
 
 ; You can compose several shapes to make something more interesting
 ; Use this form with a list of shapes in the body:
