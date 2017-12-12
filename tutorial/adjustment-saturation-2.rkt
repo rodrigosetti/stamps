@@ -1,7 +1,7 @@
 #lang s-exp stamps/lang
 
-; racket-stamps Tutorial
-; 2b - Adjustment - saturation
+; Stamps Tutorial
+; Adjustment - Saturation 2
 
 ; Just like in the previous example, but this time we reduce the
 ; saturation from full towards no color.
