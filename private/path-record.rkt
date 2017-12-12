@@ -80,8 +80,10 @@
     (define calc-bounding? #t)
 
     (define paths-queue (make-heap
-                         (λ (p1 p2) (<= (path-z-order p1)
-                                        (path-z-order p2)))))
+                         (λ (p1 p2) (< (path-z-order p1)
+                                       (path-z-order p2)))))
+    (: counter Integer)
+    (define counter 0)
 
     (define/public (get-bounding) (values min-x min-y max-x max-y))
 
