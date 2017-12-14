@@ -10,12 +10,12 @@
          "common.rkt"
          typed/racket/unsafe)
 
-(unsafe-require/typed data/heap
-                      [ #:opaque Heap heap?]
-                      [make-heap (-> (-> path path Boolean) Heap)]
-                      [heap-add! (-> Heap path Void)]
-                      [in-heap (-> Heap (Sequenceof path))]
-                      [heap-count (-> Heap Integer)])
+(unsafe-require/typed "priority-queue.rkt"
+                      [ #:opaque Queue queue?]
+                      [make-queue (-> (-> path Integer) Queue)]
+                      [queue-add! (-> Queue path Void)]
+                      [in-queue (-> Queue (Sequenceof path))]
+                      [item-count (-> Queue Integer)])
 
 (provide path
          PathRecord%
@@ -79,15 +79,15 @@
     (: calc-bounding? Boolean)
     (define calc-bounding? #t)
 
-    (define paths-queue (make-heap
-                         (λ (p1 p2) (< (path-z-order p1)
-                                       (path-z-order p2)))))
+    (define paths-queue (make-queue
+                         (λ (p) (path-z-order p))))
+    
     (: counter Integer)
     (define counter 0)
 
     (define/public (get-bounding) (values min-x min-y max-x max-y))
 
-    (define/public (get-paths-count) (heap-count paths-queue))
+    (define/public (get-paths-count) (item-count paths-queue))
 
     (: set-bounding (-> Real Real Real Real Void))
     (define/public (set-bounding x1 y1 x2 y2)
@@ -125,7 +125,7 @@
                              (translation-matrix min-x
                                                  min-y)))
 
-      (for ([P (in-heap paths-queue)])
+      (for ([P (in-queue paths-queue)])
         (define hue (path-hue P))
         (define saturation (path-saturation P))
         (define brightness (path-brightness P))
@@ -167,7 +167,7 @@
         (when (< small-x min-x) (set! min-x small-x))
         (when (< small-y min-y) (set! min-y small-y)))
       
-      (heap-add! paths-queue P))
+      (queue-add! paths-queue P))
 
     ))
 

@@ -14,7 +14,16 @@
          racket/list
          racket/sequence)
 
-(provide make-queue)
+(provide queue?
+         make-queue
+         item-count
+         in-queue
+         queue-add!)
+
+(define (queue? q)
+  (and (mpair? q)
+       (integer? (mcar q))
+       (heap? (mcdr q))))
 
 (define (make-queue fn)
   ; Make a queue with a function that determines sort field,
