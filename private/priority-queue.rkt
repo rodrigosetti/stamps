@@ -1,6 +1,6 @@
 #lang racket/base
 
-; A priority queue for storing anything
+; A priority queue for storing anything.
 
 ; From Wikipedia: a priority queue is an abstract data type which
 ; is like a regular queue or stack data structure, but where
@@ -18,21 +18,26 @@
 
 (define (make-queue fn)
   ; Make a queue with a function that determines sort field,
-  ; an integer
-  (cons 0 ; counter
+  ; which should be a number.
+  (mcons 0 ; counter
         (make-heap
-         (λ (p1 p2) (< (fn (cdr p1))
-                       (fn (cdr p2)))))))
+         (λ (p1 p2)
+           (let ([f1 (fn (cdr p1))]
+                 [f2 (fn (cdr p2))])
+             (if (eq? f1 f2)
+                 (< (car p1) (car p2))
+                 (< f1 f2)))))))
 
 (define (item-count q)
-  (heap-count (cdr q)))
+  (heap-count (mcdr q)))
 
 (define  (in-queue q)
   (sequence-map cdr
-                (in-heap (cdr q))))
+                (in-heap (mcdr q))))
 
 (define  (queue-add! q a)
-  (heap-add! (cdr q) (cons (car q) a)))
+  (heap-add! (mcdr q) (cons (mcar q) a))
+  (set-mcar! q (add1 (mcar q))))
 
 ; ---------------------------------------------------------------
 
@@ -41,9 +46,9 @@
 
   (struct person (name age) #:transparent)
   
-  (define p1 (person "Fred" 15))
-  (define p2 (person "Bill" 19))
-  (define p3 (person "Jane" 15))
+  (define p1 (person "Person1" 15))
+  (define p2 (person "Person2" 19))
+  (define p3 (person "Person3" 15))
   
   (test-case "basic tests"
              (define q (make-queue (λ (p) (person-age p))))
@@ -62,6 +67,6 @@
 
              (for ([p (in-queue q)]
                    [i (in-naturals)])
-                  (check-eq? (format "Name.~a" i) (person-name p)))
+                  (check-equal? (format "Name.~a" i) (person-name p)))
              
 ))
