@@ -11,10 +11,10 @@
          typed/racket/unsafe)
 
 (unsafe-require/typed "priority-queue.rkt"
-                      [ #:opaque Queue queue?]
-                      [make-queue (-> (-> path Integer) Queue)]
-                      [queue-add! (-> Queue path Void)]
-                      [in-queue (-> Queue (Sequenceof path))]
+                      [ #:opaque Queue pqueue?]
+                      [make-pqueue (-> (-> path Integer) Queue)]
+                      [pqueue-add! (-> Queue path Void)]
+                      [in-pqueue (-> Queue (Sequenceof path))]
                       [item-count (-> Queue Integer)])
 
 (provide path
@@ -79,7 +79,7 @@
     (: calc-bounding? Boolean)
     (define calc-bounding? #t)
 
-    (define paths-queue (make-queue
+    (define paths-queue (make-pqueue
                          (λ (p) (path-z-order p))))
     
     (: counter Integer)
@@ -125,7 +125,7 @@
                              (translation-matrix min-x
                                                  min-y)))
 
-      (for ([P (in-queue paths-queue)])
+      (for ([P (in-pqueue paths-queue)])
         (define hue (path-hue P))
         (define saturation (path-saturation P))
         (define brightness (path-brightness P))
@@ -167,7 +167,7 @@
         (when (< small-x min-x) (set! min-x small-x))
         (when (< small-y min-y) (set! min-y small-y)))
       
-      (queue-add! paths-queue P))
+      (pqueue-add! paths-queue P))
 
     ))
 

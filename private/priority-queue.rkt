@@ -14,18 +14,18 @@
          racket/list
          racket/sequence)
 
-(provide queue?
-         make-queue
+(provide pqueue?
+         make-pqueue
          item-count
-         in-queue
-         queue-add!)
+         in-pqueue
+         pqueue-add!)
 
-(define (queue? q)
+(define (pqueue? q)
   (and (mpair? q)
        (integer? (mcar q))
        (heap? (mcdr q))))
 
-(define (make-queue fn)
+(define (make-pqueue fn)
   ; Make a queue with a function that determines sort field,
   ; which should be a number.
   (mcons 0 ; counter
@@ -40,11 +40,11 @@
 (define (item-count q)
   (heap-count (mcdr q)))
 
-(define  (in-queue q)
+(define  (in-pqueue q)
   (sequence-map cdr
                 (in-heap (mcdr q))))
 
-(define  (queue-add! q a)
+(define  (pqueue-add! q a)
   (heap-add! (mcdr q) (cons (mcar q) a))
   (set-mcar! q (add1 (mcar q))))
 
@@ -60,21 +60,24 @@
   (define p3 (person "Person3" 15))
   
   (test-case "basic tests"
-             (define q (make-queue (λ (p) (person-age p))))
-             (queue-add! q p2)
+             (define q (make-pqueue (λ (p) (person-age p))))
+             (check-true (pqueue? q))
+             (check-false (pqueue? '()))
+             
+             (pqueue-add! q p2)
              (check-eq? 1 (item-count q))
 
-             (queue-add! q p1)
+             (pqueue-add! q p1)
              (check-eq? 2 (item-count q))
-             (check-eq? p1 (sequence-ref (in-queue q) 0)))
+             (check-eq? p1 (sequence-ref (in-pqueue q) 0)))
 
   (test-case "test items with same priority in order added"
-             (define q (make-queue (λ (p) (person-age p))))
+             (define q (make-pqueue (λ (p) (person-age p))))
              (for ([i 100])
-                  (queue-add! q (person (format "Name.~a" i) (quotient i 10))))
+                  (pqueue-add! q (person (format "Name.~a" i) (quotient i 10))))
              (check-eq? 100 (item-count q))
 
-             (for ([p (in-queue q)]
+             (for ([p (in-pqueue q)]
                    [i (in-naturals)])
                   (check-equal? (format "Name.~a" i) (person-name p)))
              
