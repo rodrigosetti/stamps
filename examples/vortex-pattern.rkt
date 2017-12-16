@@ -14,7 +14,7 @@
 
   ; 3) the shape S (recursively), slightly  rotated, translated
   ; and very slightly smaller and brighter
-  (S      [r  .2     ]
+  (S      [r  1.5    ]
           [t  .7   .7]
           [s  .995   ]
           [b  .002   ]))
