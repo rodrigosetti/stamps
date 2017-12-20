@@ -14,6 +14,7 @@
          saturation
          brightness
          alpha
+         z-order
          maximum-render-cycles
          bounding
          random-integer

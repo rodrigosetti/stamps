@@ -6,7 +6,7 @@
 ; By default Stamps will calculate the atwork bounding so that all of the
 ; generated shapes are visible.
 
-; When you render, Stamps will output you the bounding box calculated.
+; When you render, Stamps will output the bounding box calculated.
 ; To see this, run the following...
 
 (define-shape scene

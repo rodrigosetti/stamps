@@ -1,6 +1,6 @@
 #lang s-exp stamps/lang
 
-;; A grid with nested loops
+;; Pentagons around pentagons
 
 (define hue+ 8)
 (define scale* 0.4)

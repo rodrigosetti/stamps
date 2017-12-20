@@ -39,7 +39,8 @@
                                     (adjustment-hue adj)
                                     (adjustment-saturation adj)
                                     (adjustment-brightness adj)
-                                    (adjustment-alpha adj)))
+                                    (adjustment-alpha adj)
+                                    (adjustment-z-order adj)))
           '()))))
 
   (: square ShapeConstructor)

@@ -10,14 +10,12 @@
          "common.rkt"
          typed/racket/unsafe)
 
-(unsafe-require/typed data/queue
-                      [ #:opaque Queue queue?]
-                      [make-queue (-> Queue)]
-                      [enqueue! (-> Queue path Void)]
-                      [dequeue! (-> Queue path)]
-                      [queue-length (-> Queue Integer)]
-                      [in-queue (-> Queue (Sequenceof path))]
-                      [queue-empty? (-> Queue Boolean)])
+(unsafe-require/typed "priority-queue.rkt"
+                      [ #:opaque Queue pqueue?]
+                      [make-pqueue (-> (-> path Integer) Queue)]
+                      [pqueue-add! (-> Queue path Void)]
+                      [in-pqueue (-> Queue (Sequenceof path))]
+                      [item-count (-> Queue Integer)])
 
 (provide path
          PathRecord%
@@ -27,7 +25,8 @@
               [hue        : Real]
               [saturation : Real]
               [brightness : Real]
-              [alpha      : Real])
+              [alpha      : Real]
+              [z-order    : Integer])
   #:transparent)
 
 (: path-bounding (-> path (values Real Real Real Real)))
@@ -80,11 +79,15 @@
     (: calc-bounding? Boolean)
     (define calc-bounding? #t)
 
-    (define paths-queue (make-queue))
+    (define paths-queue (make-pqueue
+                         (λ (p) (path-z-order p))))
+    
+    (: counter Integer)
+    (define counter 0)
 
     (define/public (get-bounding) (values min-x min-y max-x max-y))
 
-    (define/public (get-paths-count) (queue-length paths-queue))
+    (define/public (get-paths-count) (item-count paths-queue))
 
     (: set-bounding (-> Real Real Real Real Void))
     (define/public (set-bounding x1 y1 x2 y2)
@@ -122,7 +125,7 @@
                              (translation-matrix min-x
                                                  min-y)))
 
-      (for ([P (in-queue paths-queue)])
+      (for ([P (in-pqueue paths-queue)])
         (define hue (path-hue P))
         (define saturation (path-saturation P))
         (define brightness (path-brightness P))
@@ -164,21 +167,22 @@
         (when (< small-x min-x) (set! min-x small-x))
         (when (< small-y min-y) (set! min-y small-y)))
       
-      (enqueue! paths-queue P))
+      (pqueue-add! paths-queue P))
 
     ))
 
+; ---------------------------------------------------------------
 
 (module+ test
   (require typed/rackunit)
 
   (test-case "path-record tests"
-
+             
              (define pr (new path-record%))
              (define a-path (path (matrix [[ 0 -1  2]
                                            [-2  7  1]
                                            [ 1  1  1]])
-                                  0 0 0 0))
+                                  0 0 0 0 0))
 
              (check-eq? 0 (send pr get-paths-count))
 
@@ -194,7 +198,7 @@
              (send pr record-path (path (matrix [[ 1  2  3]
                                                  [ 0 -4  1]
                                                  [ 1  1  1]])
-                                        0 0 0 0))
+                                        0 0 0 0 0))
              (check-eq? 2 (send pr get-paths-count))
              
              (set!-values (min-x min-y max-x max-y) (send pr get-bounding))
@@ -204,15 +208,32 @@
              (check-eq?  7 max-y))
 
   (test-case "path function tests"
-
+             
              (define a-path (path (matrix [[ 0 -1  2 -10]
                                            [-7  7  1  10]
                                            [ 1  1  1  1 ]])
-                                  0 0 0 0))
+                                  0 0 0 0 0))
              (define-values (min-x min-y max-x max-y) (path-bounding a-path))
              (check-eq? -10 min-x)
              (check-eq? -7 min-y)
              (check-eq?  2 max-x)
              (check-eq?  10 max-y))
 
-)
+  (test-case "paths with z-orders"
+
+             ; Simple path creation with z-order
+             (define pr (new path-record%))
+             (define shape (matrix [[ 0 -1  2 -10]
+                                    [-7  7  1  10]
+                                    [ 1  1  1  1 ]]))
+             (define a-path (path shape 0 0 0 0 5))
+             (send pr record-path a-path)
+             (check-eq? 1 (send pr get-paths-count))
+             
+             (define a-path2 (path shape 0 0 0 0 10))
+             (send pr record-path a-path2)
+             (check-eq? 2 (send pr get-paths-count))
+
+             ; z-order determines sequence of paths
+             ; TODO: the path with z-order of 10 should be first
+))

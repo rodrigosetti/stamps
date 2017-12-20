@@ -11,6 +11,7 @@ short scripts that you can run and modify:
 1. [Adjustment: saturation 1](adjustment-saturation.rkt)
 1. [Adjustment: saturation 2](adjustment-saturation-2.rkt)
 1. [Adjustment: shear](adjustment-shear.rkt)
+1. [Adjustment: z-order](adjustment-z-order.rkt)
 1. [Bounding](bounding.rkt)
 
 To Do:

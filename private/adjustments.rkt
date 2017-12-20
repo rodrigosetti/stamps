@@ -14,6 +14,7 @@
            geometric-delta
            target-color-delta
            color-delta
+           z-order-delta
            identity-delta
            change-to-target ; debug
            change-%
@@ -32,6 +33,8 @@
                        [alpha      : Real])
     #:transparent)
 
+  (struct z-order-delta ([z-order : Integer]) #:transparent)
+
   (struct target-color-delta color-delta ([target-hue        : Real]
                                           [target-saturation : Real]
                                           [target-brightness : Real]
@@ -40,13 +43,15 @@
 
   (define-type AdjustmentDelta (U geometric-delta
                                   color-delta
-                                  target-color-delta))
+                                  target-color-delta
+                                  z-order-delta))
 
   (struct adjustment ([geometric  : (Matrix Real)]
                       [hue        : Real]
                       [saturation : Real]
                       [brightness : Real]
-                      [alpha      : Real])
+                      [alpha      : Real]
+                      [z-order    : Integer])
     #:transparent)
 
   ;; adjustment constructors
@@ -55,7 +60,7 @@
   ; identity transformation, black, 0-saturation, 0-brightness, 1-alpha
   (: identity adjustment)
   (define identity
-    (adjustment (identity-matrix 3) 0 0 0 1))
+    (adjustment (identity-matrix 3) 0 0 0 1 0))
 
   (: identity-delta (-> geometric-delta))
   (define identity-delta
@@ -113,19 +118,28 @@
       (define saturation (adjustment-saturation adj))
       (define brightness (adjustment-brightness adj))
       (define alpha (adjustment-alpha adj))
+      (define z-order (adjustment-z-order adj))
 
       (match delta
-        [(geometric-delta m) (adjustment (matrix* matrix m) hue saturation brightness alpha)]
+        [(geometric-delta m) (adjustment (matrix* matrix m)
+                                         hue saturation brightness alpha
+                                         z-order)]
         [(color-delta h s b a) (adjustment matrix
                                            (change-hue hue h)
                                            (change-% saturation s)
                                            (change-% brightness b)
-                                           (change-% alpha a))]
+                                           (change-% alpha a)
+                                           z-order)]
         [(target-color-delta h s b a th ts tb ta) (adjustment matrix
                                                               (change-hue-target hue h th)
                                                               (change-% saturation s ts)
                                                               (change-% brightness b tb)
-                                                              (change-% alpha ta))]))
+                                                              (change-% alpha ta)
+                                                              z-order)]
+        [(z-order-delta v) (adjustment matrix
+                                       hue saturation brightness alpha
+                                       (+ z-order v))]))
+    
     (: eval-adj-delta-promise (-> (-> AdjustmentDelta) AdjustmentDelta))
     (define (eval-adj-delta-promise adj-delta-promise)
       (adj-delta-promise))
@@ -155,7 +169,8 @@
          hue
          saturation
          brightness
-         alpha)
+         alpha
+         z-order)
 
 (define-syntax-rule (rotate angle)
   (const (geometric-delta (rotation-matrix angle))))
@@ -211,6 +226,9 @@
      #'(thunk (color-delta 0 0 0 v))]
     [(_ v t)
      #'(thunk (target-color-delta 0 0 0 v  0 0 0 t))]))
+
+(define-syntax-rule (z-order v)
+  (thunk (z-order-delta v)))
 
 ;; ------------------------------------------------------------------------
 
@@ -357,4 +375,23 @@
              [3 1 0]
              [0 0 1]])))
 
+  (test-case
+   "z-order adjustments"
+
+   (check-equal?
+    (adjustment-z-order identity)
+    0)
+
+   (check-equal?
+    (adjustment-z-order
+     (combine-adjustment identity (z-order 1)))
+    1)
+
+   (check-equal?
+    (adjustment-z-order
+     (combine-adjustment identity
+                         (z-order 1)
+                         (saturation 0.5)
+                         (z-order -1)))
+     0))
   )

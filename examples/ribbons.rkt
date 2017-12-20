@@ -45,5 +45,5 @@
                     [s    0.9987    ])])
 
 (background '(0 0 0))
-(maximum-render-cycles 1000000)
+(maximum-render-cycles 100000)
 (start-shape start)
