@@ -27,4 +27,5 @@
          triangle
          circle
          pentagon
-         hexagon)
+         hexagon
+         polygon)

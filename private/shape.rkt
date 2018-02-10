@@ -17,7 +17,8 @@
                   triangle
                   circle
                   pentagon
-                  hexagon)
+                  hexagon
+                  polygon)
 
   ; Types
 
@@ -79,6 +80,10 @@
   (: hexagon ShapeConstructor)
   (define hexagon (make-polygon-constructor 6))
 
+  (: polygon (-> Integer ShapeConstructor))
+  (define (polygon n)
+    (make-polygon-constructor n))
+
   )
 
 (require (for-syntax racket/base)
@@ -94,6 +99,7 @@
          triangle
          pentagon
          hexagon
+         polygon
          define-shape
          loop
          ShapeConstructor
