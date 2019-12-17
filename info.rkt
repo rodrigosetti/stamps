@@ -3,9 +3,15 @@
 (define collection "stamps")
 
 (define deps '("base"
-               "rackunit-lib"))
+               "data-lib"
+               "draw-lib"
+               "math-lib"
+               "rackunit-lib"
+               "typed-racket-lib"
+               "typed-racket-more"))
 
 (define build-deps '("rackunit-lib"
+                     "rackunit-typed"
                      "racket-doc"
                      "scribble-lib"))
 
